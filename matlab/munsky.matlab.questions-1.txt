@@ -1,0 +1,34 @@
+(Munsky's Matlab Code)
+dx: In Generate_Data.m, L84, why we take log of 'rand'? Is it because the next reaction time follows a 
+    master equation such that we will evetually take exp of both LHS and RHS? If it is true, why the 2nd term
+    on the RHS isn't log(rand/w0)? 
+
+jg: This is actually just a fancy way to sample from an exponential distribution using a uniform random sampler.
+See http://en.wikipedia.org/wiki/Inverse_transform_sampling and http://en.wikipedia.org/wiki/Probability_integral_transform
+(wiki doesn't have proofs for the second but you can find them by googling).  
+
+
+dx: In Generate_Data.m, L89-91, why are the types of reactions integer-valued? I guess it is because we
+    restrict the model in a finite discrete 'message' space?
+
+jg: The "reaction" is just a message sent from one SFT to another.  They aren't necessarily integer valued, 
+    we just need a way to keep track of them.  Theoretically you can label it "A, "B" ...etc." but integers
+    seem to be a bit easier to work with.  
+
+
+dx: In Get_Prob_Model_Given_Data.m, L35, does Network represent the connection matrix A such that each entry
+    represents the probability that one node infects the other?
+
+    L44, according to the comment after line, I am pretty sure that the correct form should be 
+    ``State_of_Infection' * Network .* repmat((1 - State_of_Infection),1,length(Sequence))", which uses a 
+    dot (element-wise) mulplication between 2nd and  3rd terms. I am not sure whether the expression in the
+    code is equivalent to the form I wrote. The expression, using matrix multiplication both between 1st and
+    2nd and between 2nd and 3rd terms, seems lack of mathematical meaning at least to me. What do you think?
+
+
+dx: In Get_Prob_Model_Given_Data.m, L87-105 are without comments. Do you understand what functionality of 
+    this block (function) is?
+
+
+dx: In Main.m, L57, shouldn't the RHS be Prob_Model_Given_Data_1 (guessed data) rather than ..._0 (actual
+    data)?  
