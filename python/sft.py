@@ -55,10 +55,15 @@ class SFT(object):
     Attributes
     ----------
 
+    state : string, float, arr
 
 
     Methods
     -------
+
+    react :
+        Given a message and a sender, the node reacts by changing
+        state and/or sending out a message.
     """
 
 
@@ -68,4 +73,13 @@ class SFT(object):
         self.sends_to = sends_to
         self.rates = rates
         self.messages = messages
+        self.state = None
+
+    def react(self, message, source):
+        if message == 'malicious':
+            self.state = 'infected'
+    #  This is obviously not general but is the case for the
+    #  cyber project.  Ideally, it would be a draw from
+    #  pi-sp given message, source and state.
+
 

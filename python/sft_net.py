@@ -38,6 +38,8 @@ class SFTNet(object):
         the rate at which i sends messages to j given that the state
         of the system is given by cross_S[k].
 
+    state : list
+        The state of the nodes.  Order is given by "nodes"
 
 
 
@@ -51,6 +53,9 @@ class SFTNet(object):
         Generates the transmission matrix for every possible
         state of the net.
 
+    get_state :
+        returns the state of the nodes.  Order is given by node order
+
 
 
 
@@ -59,7 +64,7 @@ class SFTNet(object):
     def __init__(self, nodes):
         self.nodes = nodes
         self._gen_cross_s()
-        self._get_transmission()
+        self._gen_transmission()
 
     def _gen_cross_s(self):
         """
@@ -72,7 +77,8 @@ class SFTNet(object):
             S_collection.append(node.states)
             # Create a list of lists.  Each element
             # is a list of states for a node
-        self.cross_S = list(itertools.product(*S_collection))
+        cross_S = list(itertools.product(*S_collection))
+        self.cross_S = [list(x) for x in cross_S]
         # Gives the Cartesian product of the sets of states of
         # each node.  This will determine the transmission rates.
 
@@ -98,14 +104,16 @@ class SFTNet(object):
                         # If this_node sends  messages to another_node
                         o_node_name = self.nodes[o_node_num].name
                         transmission[nodenum, o_node_num] = \
-                            this_node.rates[o_node_name][state_ix]
+                            np.sum(this_node.rates[o_node_name][state_ix, :])
                         # Fill in the transmission rate matrix.  The i,j
                         # element of the matrix is the rate at which i sends
-                        # messages to j, given i is in the state determined
-                        # by config.
+                        # messages *of any type* to j, given i is in the state
+                        # determined by config.
             transmission_mats.append(transmission)
         self.transmission_mats = transmission_mats
 
+    def get_state(self):
+        return [x.state for x in self.nodes]
 
 
 
