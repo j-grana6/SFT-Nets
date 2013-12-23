@@ -1,4 +1,6 @@
 import numpy as np
+import copy
+import operator
 
 
 def gen_data(T, SFTNet, s0):
@@ -34,7 +36,8 @@ def gen_data(T, SFTNet, s0):
     # initialize number of reactions
     t = 0
     # initialize start time
-    infect_times = dict(zip([x.name for x in SFTNet.nodes], [0]*n_nodes))
+    infect_times = dict(zip([x.name for x in SFTNet.nodes], [T]*n_nodes))
+    infect_times['A'] = 0
     state = s0
     for s in range(len(state)):
         SFTNet.nodes[s].state = state[s]
@@ -102,8 +105,134 @@ def gen_data(T, SFTNet, s0):
             # The only time this happens is if a node gets infected
             state_change = 1
             infect_times[receiver.name] = t
+            # Dictionary
             state = SFTNet.get_state()
+            # Update state
         n_reactions += 1
-    return (msgs_sent, reaction_times, reaction_sender,
-            reaction_receiver, n_reactions, infect_times)
+    return (np.asarray(msgs_sent), np.asarray(reaction_times),
+            np.asarray(reaction_sender),
+            np.asarray(reaction_receiver), n_reactions, infect_times)
+
+
+
+def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
+                          receivers, T):
+    """
+    Parameters
+    ----------
+
+    net : SFTNet instance
+        An SFTNet
+
+    msg_times : list
+        A list of times of transmissions (in order)
+
+    infect_times : dict
+        Dictionary of infection times
+
+    senders : list
+        List of senders of messages.  Order is given by msg_times.
+
+    receivers : list
+        List of receivers of messages.  Order is given by msg times.
+
+    T : float
+        Total running time
+
+    """
+
+    # First order the infections
+    sorted_infect = sorted(infect_times.iteritems(),
+                           key=operator.itemgetter(1))
+    print sorted_infect
+    # Creates a list of tuples and the sorts by the value
+    state = ['infected'] + (len(SFTNet.nodes) - 1) * ['normal']
+    # Assuming the first node in SFTNet.nodes is infected.
+    # This can be generalized to any initial condition state
+    prob_sequence = 0
+    prob_exact_times = 0
+    time_minus_1 = 0
+    for node, time in sorted_infect[1:]:
+        infect_ix = SFTNet.node_names.index(node)
+        # The index of the node that gets infected
+        cross_S_ix = SFTNet.cross_S.index(state)
+        # The state of the net when the node gets infected
+        mal_trans = SFTNet.mal_trans_mats[cross_S_ix]
+        # The transmission matrix of malicious messages given config
+        prob_node = np.sum(mal_trans[:, infect_ix])
+        # The (relative) probability that the node
+        # is infected by any other node
+        prob_total = np.sum(mal_trans[:, np.asarray(state) == 'normal'])
+        # Only the nodes that are not already infected can become
+        # infected.
+        prob_sequence += np.log(prob_node) - np.log(prob_total)
+        # Update the probability of the sequence order
+        deltat = time - time_minus_1 + 10 ** -10
+        # The time between infections
+        prob_exact_times += np.log(prob_total) - np.log(deltat * prob_total)
+        # Update the probability of the specific times.  We use deltat
+        # because of the memoryless property of the process.
+        state[infect_ix] = 'infected'
+        time_minus_1 = time
+        ## The above loop combines the first 2 functions of Munsky's
+        ## matlab code.
+    prob_data = 0
+    for node, time in sorted_infect:
+        # For each node.  Node is the node name, not the instance
+        _node_ix = SFTNet.node_names.index(node)
+        _node_inst = SFTNet.nodes[_node_ix]
+        # We need the node instance here.  This should be added as a method
+        # of SFTNet instance
+        norm_ix = _node_inst.states.index('normal')
+        # Index of normal state
+        infect_ix = _node_inst.states.index('infected')
+        # Index of infected state
+        for o_node in _node_inst.sends_to:
+            print node
+            # If two nodes are connected
+            num_before = np.sum(((senders == node) *
+                                (receivers == o_node)
+                                )[msg_times <= time])
+            # Number of reactions before
+            num_after = np.sum(((senders== node) *
+                                (receivers == o_node)
+                                )[msg_times > time])
+            # Number of reactions after infection
+            prob_before = ( num_before *
+                        np.log(np.sum(_node_inst.rates[o_node][norm_ix, :]) *
+                        min(time + 10 ** -10, T)) -
+                        np.sum(np.log(np.arange(1, num_before+1))) -
+                        np.sum(_node_inst.rates[o_node][norm_ix, :]) *
+                        min(time, T))
+            # prob before is the probability of node sending num_before
+            # messages to o_node before it gets infected.  This is a bit
+            # different from Munsky's in 3 ways.  The first is the min
+            # function.  This allows us to compute the probability of the model
+            # even when our 'guess' times are above the simulation time.
+            # For example, we can compute the probability of the model
+            # that says node 2 gets infected at time 10001 when we only
+            # sample up to time 1000.  The second difference is the the
+            # 10**-10 term.  This is simply because I assume the simulation
+            # starts at time 0, not time 1.  Finally, I use numpy to compute
+            # the factorial instead of his function.  We will see if this is
+            # a significant bottle neck later.
+            prob_after = ( num_after *
+                        np.log(np.sum(_node_inst.rates[o_node][infect_ix, :]) *
+                        max(T- time, 10**-10)) -
+                        np.sum(np.log(np.arange(1, num_after + 1))) -
+                        np.sum(_node_inst.rates[o_node][infect_ix, :]) *
+                        max(T-time, 10**-10))
+            prob_data += prob_before + prob_after
+            print node, o_node, prob_before, prob_after
+
+    return prob_sequence + prob_exact_times + prob_data
+
+
+
+
+
+
+
+
+
 
