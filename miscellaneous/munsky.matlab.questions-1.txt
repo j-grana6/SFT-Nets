@@ -75,4 +75,6 @@ dx5a: My wording was not proper, ..._0 is old guess and ..._1 is new guess. If s
       pass the old one to the new one (..._0 --> ..._0). For if and elseif, since ..._0 == ..._1, it doesn't 
       matter whether to pass ..._0 or ..._1 to fcn_array_history. But my confusion was in the case of ``else".
       See L56, it is time_array_1 which is assigned to history. Why in L57, it is ..._0 not ..._1?
+      
+jg:   Yes, you are absolutely correct.  I actually read it backward too.  Nice catch.  
 
