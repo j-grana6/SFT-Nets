@@ -89,8 +89,8 @@ class SFTNet(object):
     def _gen_transmission(self):
         num_nodes = len(self.nodes)  # How many SFTs
         transmission_mats = []
-        # A container for all transmission matrices.  The order is determined
-        # by the order of self.cross_S
+        # A container for all transmission matrices.
+        # The order is determined by the order of self.cross_S
         for config in self.cross_S:
             # Step through states of the net.
             transmission = np.zeros((num_nodes, num_nodes))

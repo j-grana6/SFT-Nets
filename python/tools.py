@@ -101,7 +101,6 @@ def gen_data(T, SFTNet, s0):
             # infected, this will hold.
             state_change = 0
         else:
-            print t
             # The only time this happens is if a node gets infected
             state_change = 1
             infect_times[receiver.name] = t
@@ -144,7 +143,7 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
     # First order the infections
     sorted_infect = sorted(infect_times.iteritems(),
                            key=operator.itemgetter(1))
-    print sorted_infect
+
     # Creates a list of tuples and the sorts by the value
     state = ['infected'] + (len(SFTNet.nodes) - 1) * ['normal']
     # Assuming the first node in SFTNet.nodes is infected.
@@ -165,11 +164,13 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
         prob_total = np.sum(mal_trans[:, np.asarray(state) == 'normal'])
         # Only the nodes that are not already infected can become
         # infected.
-        prob_sequence += np.log(prob_node) - np.log(prob_total)
+        prob_sequence += np.log(prob_node + 10 ** -10) - \
+          np.log(prob_total)
         # Update the probability of the sequence order
         deltat = time - time_minus_1 + 10 ** -10
         # The time between infections
-        prob_exact_times += np.log(prob_total) - np.log(deltat * prob_total)
+        prob_exact_times += np.log(prob_total) - \
+        np.log(deltat * prob_total)
         # Update the probability of the specific times.  We use deltat
         # because of the memoryless property of the process.
         state[infect_ix] = 'infected'
@@ -188,7 +189,6 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
         infect_ix = _node_inst.states.index('infected')
         # Index of infected state
         for o_node in _node_inst.sends_to:
-            print node
             # If two nodes are connected
             num_before = np.sum(((senders == node) *
                                 (receivers == o_node)
@@ -199,9 +199,10 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
                                 )[msg_times > time])
             # Number of reactions after infection
             prob_before = ( num_before *
-                        np.log(np.sum(_node_inst.rates[o_node][norm_ix, :]) *
+                        np.log(10**-10 +
+                        np.sum(_node_inst.rates[o_node][norm_ix, :]) *
                         min(time + 10 ** -10, T)) -
-                        np.sum(np.log(np.arange(1, num_before+1))) -
+                        np.sum(np.log(10 ** -10 + np.arange(1, num_before+1))) -
                         np.sum(_node_inst.rates[o_node][norm_ix, :]) *
                         min(time, T))
             # prob before is the probability of node sending num_before
@@ -217,14 +218,13 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
             # the factorial instead of his function.  We will see if this is
             # a significant bottle neck later.
             prob_after = ( num_after *
-                        np.log(np.sum(_node_inst.rates[o_node][infect_ix, :]) *
+                        np.log(10 ** -10 +
+                        np.sum(_node_inst.rates[o_node][infect_ix, :]) *
                         max(T- time, 10**-10)) -
-                        np.sum(np.log(np.arange(1, num_after + 1))) -
+                        np.sum(np.log(10 ** -10 + np.arange(1, num_after + 1))) -
                         np.sum(_node_inst.rates[o_node][infect_ix, :]) *
                         max(T-time, 10**-10))
             prob_data += prob_before + prob_after
-            print node, o_node, prob_before, prob_after
-
     return prob_sequence + prob_exact_times + prob_data
 
 
