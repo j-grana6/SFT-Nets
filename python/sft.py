@@ -76,10 +76,16 @@ class SFT(object):
         self.state = None
 
     def react(self, message, source):
-        if message == 'malicious':
+        if message.lower() == 'malicious':
             self.state = 'infected'
     #  This is obviously not general but is the case for the
     #  cyber project.  Ideally, it would be a draw from
     #  pi-sp given message, source and state.
+
+        elif message.lower() == 'clean':
+            pass #a proper reaction will be added here.
+
+        else:
+            raise ValueError('Unknown message type: {}!').format(message)
 
 
