@@ -1,0 +1,78 @@
+(Munsky's Matlab Code)
+dx1q: In Generate_Data.m, L84, why we take log of 'rand'? Is it because the next reaction time follows a
+    master equation such that we will evetually take exp of both LHS and RHS? If it is true, why the 2nd term
+    on the RHS isn't log(rand/w0)?
+
+jg1a: This is actually just a fancy way to sample from an exponential distribution using a uniform random sampler.
+See http://en.wikipedia.org/wiki/Inverse_transform_sampling and http://en.wikipedia.org/wiki/Probability_integral_transform
+(wiki doesn't have proofs for the second but you can find them by googling).
+
+dx1a: Yes, I agree. My confusion was that why w0 isn't included in log, because I thought t_{n+1} is what we
+      were sampling. Now I understand, given t_{n}, it is equivalent to sampling the time interval 
+      dt = t_{n+1} - t_{n}, i.e. next reaction time. So L84 is basically saying rand = exp(-w0*dt).
+
+dx2q: In Generate_Data.m, L89-91, why are the types of reactions integer-valued? I guess it is because we
+     restrict the model in a finite discrete 'message' space?
+
+jg2a: The "reaction" is just a message sent from one SFT to another.  They aren't necessarily integer valued,
+    we just need a way to keep track of them.  Theoretically you can label it "A, "B" ...etc." but integers
+    seem to be a bit easier to work with.
+
+dx2a: I did not convey my interpretation properly in word. But actually I was saying the same thing as your
+      explanation.
+
+dx3q: In Get_Prob_Model_Given_Data.m, L35, does Network represent the connection matrix A such that each entry
+    represents the probability that one node infects the other?
+
+jg: Yes, provided that the infecting node is itself infected.
+
+    L44, according to the comment after line, I am pretty sure that the correct form should be
+    ``State_of_Infection' * Network .* repmat((1 - State_of_Infection),1,length(Sequence))", which uses a
+    dot (element-wise) mulplication between 2nd and  3rd terms. I am not sure whether the expression in the
+    code is equivalent to the form I wrote. The expression, using matrix multiplication both between 1st and
+    2nd and between 2nd and 3rd terms, seems lack of mathematical meaning at least to me. What do you think?e
+
+jg3a: hmm, I'm not quite sure what you mean here.  State_of_InFection'*Network gives a 1x4 vector such that the
+    ith element of that vector is the probability that node (i) gets infected.  In other words, it will measure
+    the (relative) probability that *any* node gets infected.  However, multiplying that by 1-State_Of_Infection
+    corrects for the fact that a node that is already infected can't become infected again. Also remember that L44
+    should evaluate to a scaler.  The way you wrote it, the result will be a matrix.  Anyway, the confusing part is
+    that he named it "Prob_total."  I think it would be better understood as rate total.
+
+dx3a: Your explanation is correct.I made some mistake.
+
+
+dx4q: In Get_Prob_Model_Given_Data.m, L87-105 are without comments. Do you understand what functionality of
+    this block (function) is?
+
+jg4a: Yes I do, but it took me a while.  I will explain this in terms of the probability of the sequence before the infection.
+    After the infection is analgous.  In the inner loop of this code block (starting with if Network(i,j)>0, he is
+    computing the probability of the sequence of messages from i to j.  So at any given time, the (instantaneous) probability
+    of a message from i to j is given by lambda1 * e^(-delta_t* lambda 1).  That means the probability of drawing the n draws
+    from the data is \prod_i^n lambda1*e^(-delta_t_i*lambda1).  You can rearrage this by factoring out the lambda1 and
+    combining the exponents as: lambda1^n*e^(t_n*lambda1).  Notice in the exponent it is t_n, the time of the last message,
+    not delta_t_n.  Therefore, the probability of drawing n exponential variables as such is given by lambda1^n*e^(t_n*lambda1).
+    Notice that the probability of the sequence does *not* depend on the specific times of the data.  Instead, it just depends
+    on n, the number of observations.  Therefore, the probability of observing the data is proportional to the probability of
+    observing n jumps.  Therefore, we can model the probability of the data  as a poisson process.  Look at wikipedia for the pdf
+    of N(t) in a Poisson process.  The long line in the function is just the log of that distribution for pre and post infection
+    times.
+
+dx4a: Okay, it is profound. It even took me quite a while to read your explanation. Now I got it. Thanks!
+
+
+dx5q: In Main.m, L57, shouldn't the RHS be Prob_Model_Given_Data_1 (guessed data) rather than ..._0 (actual
+    data)?
+
+jg5a: I don't think I understand your question.  Both ..._0 and ..._1 are guessed data.  They both change during the MCMC.
+    .._0 is the accepted data
+
+jg: When translating this code the most import thing is to keep these comments.  The comments made the code readable.
+    Given the complexity of the project, **excessive** comments will be necessary.
+
+dx5a: My wording was not proper, ..._0 is old guess and ..._1 is new guess. If some criteria are satisfied
+      (if and elseif in the code), the old one is replaced by the new one. Otherwise (else in the code) we 
+      pass the old one to the new one (..._0 --> ..._0). For if and elseif, since ..._0 == ..._1, it doesn't 
+      matter whether to pass ..._0 or ..._1 to fcn_array_history. But my confusion was in the case of ``else".
+      See L56, it is time_array_1 which is assigned to history. Why in L57, it is ..._0 not ..._1?
+
