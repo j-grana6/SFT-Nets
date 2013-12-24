@@ -2,15 +2,26 @@ dx: In sft.py, L80, I do not think the node will be infected FOR SURE when the m
     motivating example in the writeup, I think the infection given a malicious message is still probabilistic.
     (I saw your notes to the SFT class later. It is a preliminary version. We will include \pi^{sp} and
     \pi^{st} eventually. If this is the case, then I have no problem.)
+    
+jg:  Of course.  In Munsky's code, it occurs with Prob 1 so I'm starting off there
 
 dx: In sft.py, what is the difference between ``state" and ``states"?
 
+jg: states is a list of possible states.  state is the state that the node is currently in.  It's not implemented
+    yet though.  
+
 dx: In sft_net.py, L85, each x in cross_S is a 2-element tuple if I understand correctly, right? Because
     cross_S is a Cartesian product. Is there convinience that you list(x) rather than keep x as a tuple?
+
+jg: It depends.  cross_S is the Cartesian product across the number of nodes.  So if there are 4 nodes, each
+    element of cross_S will have 4 items.
 
 dx: In sft_net.py, loop ranging from L105 to L115, I did not see any restriction such that the node cannot 
     send messages to itself. Does that mean the list node.sends_to already include such a restriction, i.e.
     `itself' is not in node.sends_to? If that is the case, maybe we can add an explicit assertion for safety.
     That is, `assert this_node.name is not in this_node.sends_to'.
+    
+jg: No, I did not restrict that.  I think an assertion would be fine.  However, is there anywhere in the theory
+    that says a node can't send a message to itself
 
 
