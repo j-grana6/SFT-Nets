@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import operator
+from scipy.stats import poisson
 
 
 def gen_data(T, SFTNet, s0):
@@ -138,8 +139,14 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
     T : float
         Total running time
 
-    """
+    Notes
+    -----
 
+    This function cannot take the same infection time for multiple nodes
+    as a starting parameters.  Need to look into why.
+
+    """
+    eps = 10 ** -300
     # First order the infections
     sorted_infect = sorted(infect_times.iteritems(),
                            key=operator.itemgetter(1))
@@ -164,13 +171,13 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
         prob_total = np.sum(mal_trans[:, np.asarray(state) == 'normal'])
         # Only the nodes that are not already infected can become
         # infected.
-        prob_sequence += np.log(prob_node + 10 ** -10) - \
-          np.log(prob_total)
+        prob_sequence += np.log(prob_node + eps) - \
+          np.log(prob_total + eps)
         # Update the probability of the sequence order
-        deltat = time - time_minus_1 + 10 ** -10
+        deltat = time - time_minus_1 + eps
         # The time between infections
-        prob_exact_times += np.log(prob_total) - \
-        np.log(deltat * prob_total)
+        prob_exact_times += np.log(prob_total + eps) - \
+        np.log(deltat * prob_total + eps)
         # Update the probability of the specific times.  We use deltat
         # because of the memoryless property of the process.
         state[infect_ix] = 'infected'
@@ -179,7 +186,7 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
         ## matlab code.
     prob_data = 0
     for node, time in sorted_infect:
-        # For each node.  Node is the node name, not the instance
+        # For each node.  node is the node name, not the instance
         _node_ix = SFTNet.node_names.index(node)
         _node_inst = SFTNet.nodes[_node_ix]
         # We need the node instance here.  This should be added as a method
@@ -199,10 +206,10 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
                                 )[msg_times > time])
             # Number of reactions after infection
             prob_before = ( num_before *
-                        np.log(10**-10 +
+                        np.log(eps +
                         np.sum(_node_inst.rates[o_node][norm_ix, :]) *
-                        min(time + 10 ** -10, T)) -
-                        np.sum(np.log(10 ** -10 + np.arange(1, num_before+1))) -
+                        min(time + eps, T)) -
+                        np.sum(np.log(eps + np.arange(1, num_before+1))) -
                         np.sum(_node_inst.rates[o_node][norm_ix, :]) *
                         min(time, T))
             # prob before is the probability of node sending num_before
@@ -218,14 +225,35 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
             # the factorial instead of his function.  We will see if this is
             # a significant bottle neck later.
             prob_after = ( num_after *
-                        np.log(10 ** -10 +
+                        np.log(eps +
                         np.sum(_node_inst.rates[o_node][infect_ix, :]) *
-                        max(T- time, 10**-10)) -
-                        np.sum(np.log(10 ** -10 + np.arange(1, num_after + 1))) -
+                        max(T- time, eps)) -
+                        np.sum(np.log(eps + np.arange(1, num_after + 1))) -
                         np.sum(_node_inst.rates[o_node][infect_ix, :]) *
-                        max(T-time, 10**-10))
+                        max(T-time, eps))
             prob_data += prob_before + prob_after
     return prob_sequence + prob_exact_times + prob_data
+
+def prob_model_no_attacker(SFTnet, data, T):
+    """
+    Calculates the probability of the data when no node is
+    initially infected.  It is just the probability of each
+    sequence of observations.
+    """
+
+    for node in SFTnet.nodes:
+        # For each node
+        for rec in node.sends_to:
+        # For each possible receiver
+            normal_ix = node.states.index('normal')
+            clean_ix = node.messages.index('clean')
+
+            rate = node.rates[rec.name][normal_ix][clean_ix]
+            num_sent = np.sum((data[2] == node.name) * (data[3] == rec.name)))
+            logprob = -rate * T + num_sent * (np.log(rate * T)) \
+              - np.sum(np.log(np.arange(1, num_sent+1, 1_)))
+
+
 
 
 
