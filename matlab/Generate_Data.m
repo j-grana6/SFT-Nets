@@ -141,7 +141,7 @@ for i = 1 : nodes % Step over the origination node for each link.
 end
 
 % Define output structure.
-Data.time_n=time_n;
+Data.time_n=time_n';
 Data.num=num;
 Data.t=t;
 Data.links=links;
