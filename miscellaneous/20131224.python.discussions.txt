@@ -1,3 +1,5 @@
+20131224
+--------
 dx: In sft.py, L80, I do not think the node will be infected FOR SURE when the message is malicious. From the 
     motivating example in the writeup, I think the infection given a malicious message is still probabilistic.
     (I saw your notes to the SFT class later. It is a preliminary version. We will include \pi^{sp} and
@@ -25,3 +27,17 @@ jg: No, I did not restrict that.  I think an assertion would be fine.  However, 
     that says a node can't send a message to itself
 
 
+20131227
+--------
+dx: In tools.py, I did not quite understand L75 - L76. Shouldn't always reaction_ix <= n_nodes? Therefore
+    the line says sender_ix always 0 and receiver_ix always reaction_ix?
+
+dx: In tools.py, L86-87, why do you use np.random.random()*msg_distribution[-1]? My interpretation is that you
+    wanted to randomize a message to sent out? I think it is equivalent to randomize an integer ranging from 0
+    to len(msg_distribution) and then that random integer is the index?
+
+dx: In tools.py, L95-96, you append sender and receiver. I think these two lists should have orders
+    corresponding to each other right? So that we can know who send to who. Is it possible that a node reacts 
+    by sending messages to multiple neighboring nodes?
+
+dx: In tools.py, L174-175, what is your purpose to use the very small number ``eps"?
