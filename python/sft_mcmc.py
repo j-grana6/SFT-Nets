@@ -46,8 +46,7 @@ def MCMC_SFT(SFTNet, data, N, z0, T):
         p1 = prob_mod(z1)
         if min(z1.values()) >=  0:
             log_q_ratio = qij_over_qji(z0,z1, con_cdf, convoluted_pdf_func)
-            if (p1 - p0  +
-                log_q_ratio >
+            if (p1 - p0   + log_q_ratio >
                 np.log(np.random.random())):
                 print 'A Jump at, ', n, 'to ', z1, 'with prob', p1, '\n'
                 t0 = z1.values()

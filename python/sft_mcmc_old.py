@@ -36,10 +36,9 @@ def MCMC_SFT_old(SFTNet, data, N, z0, T):
     probs = []
     # container for probabilities
     while n < N:
-        za = 0
         zb = z0['B'] + np.random.normal() *  100
         zc = z0['C'] + np.random.normal() * 100
-        zd = z0['D'] + np.random.random() * 50
+        zd = z0['D'] + np.random.random() * 100
         z1 = dict(zip(['A', 'B', 'C', 'D'], [za, zb,zc, zd]))
         p1 = prob_mod(z1)
         if min(z1.values()) >=  0:
