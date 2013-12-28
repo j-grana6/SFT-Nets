@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 import operator
-from scipy.stats import poisson
+from scipy.stats import poisson, norm
 
 
 def gen_data(T, SFTNet, s0):
@@ -146,12 +146,11 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
     as a starting parameters.  Need to look into why.
 
     """
-    eps = 10 ** -300
+    eps = 0
     # First order the infections
     sorted_infect = sorted(infect_times.iteritems(),
                            key=operator.itemgetter(1))
-
-    # Creates a list of tuples and the sorts by the value
+    # Creates a list of tuples and then sorts by the value
     state = ['infected'] + (len(SFTNet.nodes) - 1) * ['normal']
     # Assuming the first node in SFTNet.nodes is infected.
     # This can be generalized to any initial condition state
@@ -177,7 +176,7 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
         deltat = time - time_minus_1 + eps
         # The time between infections
         prob_exact_times += np.log(prob_total + eps) - \
-        np.log(deltat * prob_total + eps)
+            deltat * prob_total
         # Update the probability of the specific times.  We use deltat
         # because of the memoryless property of the process.
         state[infect_ix] = 'infected'
@@ -196,42 +195,66 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
         infect_ix = _node_inst.states.index('infected')
         # Index of infected state
         for o_node in _node_inst.sends_to:
-            # If two nodes are connected
-            num_before = np.sum(((senders == node) *
-                                (receivers == o_node)
-                                )[msg_times <= time])
-            # Number of reactions before
-            num_after = np.sum(((senders== node) *
-                                (receivers == o_node)
-                                )[msg_times > time])
-            # Number of reactions after infection
-            prob_before = ( num_before *
-                        np.log(eps +
-                        np.sum(_node_inst.rates[o_node][norm_ix, :]) *
-                        min(time + eps, T)) -
-                        np.sum(np.log(eps + np.arange(1, num_before+1))) -
-                        np.sum(_node_inst.rates[o_node][norm_ix, :]) *
-                        min(time, T))
-            # prob before is the probability of node sending num_before
-            # messages to o_node before it gets infected.  This is a bit
-            # different from Munsky's in 3 ways.  The first is the min
-            # function.  This allows us to compute the probability of the model
-            # even when our 'guess' times are above the simulation time.
-            # For example, we can compute the probability of the model
-            # that says node 2 gets infected at time 10001 when we only
-            # sample up to time 1000.  The second difference is the the
-            # 10**-10 term.  This is simply because I assume the simulation
-            # starts at time 0, not time 1.  Finally, I use numpy to compute
-            # the factorial instead of his function.  We will see if this is
-            # a significant bottle neck later.
-            prob_after = ( num_after *
-                        np.log(eps +
-                        np.sum(_node_inst.rates[o_node][infect_ix, :]) *
-                        max(T- time, eps)) -
-                        np.sum(np.log(eps + np.arange(1, num_after + 1))) -
-                        np.sum(_node_inst.rates[o_node][infect_ix, :]) *
-                        max(T-time, eps))
-            prob_data += prob_before + prob_after
+        # If two nodes are connected
+            if time == 0:
+                # Because of problems with 0 in logs
+                # we use this for nodes that are initially
+                # infected
+                num_msgs = np.sum((senders == node) *
+                                  (receivers == o_node))
+                prob_msgs = (num_msgs *
+                    np.log(
+                    np.sum(_node_inst.rates[o_node][infect_ix, :]) * T) -
+                    np.sum(np.log(np.arange(1, num_msgs  + 1))) -
+                    np.sum(_node_inst.rates[o_node][infect_ix, :]) * T)
+                prob_data += prob_msgs
+            elif time >= T - 2:
+                num_msgs = np.sum((senders == node) *
+                                  (receivers == o_node))
+                prob_msgs = (num_msgs *
+                    np.log(
+                    np.sum(_node_inst.rates[o_node][infect_ix, :]) * T) -
+                    np.sum(np.log(np.arange(1, num_msgs  + 1))) -
+                    np.sum(_node_inst.rates[o_node][infect_ix, :]) * T)
+                prob_data += prob_msgs
+            else:
+                num_before =  np.sum(((senders == node) *
+                                    (receivers == o_node)
+                                    )[msg_times <= time])
+                # Number of reactions before
+                num_after = np.sum(((senders== node) *
+                                    (receivers == o_node)
+                                    )[msg_times > time])
+
+                # Number of reactions after infection
+                prob_before = (num_before *
+                            np.log(eps +
+                            np.sum(_node_inst.rates[o_node][norm_ix, :]) *
+                            min(time + eps, T)) -
+                            np.sum(np.log(eps + np.arange(1, num_before+1))) -
+                            np.sum(_node_inst.rates[o_node][norm_ix, :]) *
+                            min(time, T))
+                # prob before is the probability of node sending num_before
+                # messages to o_node before it gets infected.  This is a bit
+                # different from Munsky's in 3 ways.  The first is the min
+                # function.  This allows us to compute the probability of the
+                # model even when our 'guess' times are above the simulation time.
+                # For example, we can compute the probability of the model
+                # that says node 2 gets infected at time 10001 when we only
+                # sample up to time 1000.  The second difference is the the
+                # 10**-10 term.  This is simply because I assume the simulation
+                # starts at time 0, not time 1.  Finally, I use numpy to compute
+                # the factorial instead of his function.  We will see if this is
+                # a significant bottle neck later.
+                prob_after = ( num_after *
+                            np.log(eps +
+                            np.sum(_node_inst.rates[o_node][infect_ix, :]) *
+                            (T- time)) -
+                            np.sum(np.log(eps + np.arange(1, num_after + 1))) -
+                            np.sum(_node_inst.rates[o_node][infect_ix, :]) *
+                            (T-time))
+                prob_data += prob_before + prob_after
+
     return prob_sequence + prob_exact_times + prob_data
 
 def prob_model_no_attacker(SFTnet, data, T):
@@ -240,23 +263,77 @@ def prob_model_no_attacker(SFTnet, data, T):
     initially infected.  It is just the probability of each
     sequence of observations.
     """
-
+    total_prob = 0
     for node in SFTnet.nodes:
         # For each node
         for rec in node.sends_to:
         # For each possible receiver
             normal_ix = node.states.index('normal')
             clean_ix = node.messages.index('clean')
+            rate = node.rates[rec][normal_ix, clean_ix]
+            num_sent = np.sum((data[2] == node.name) * (data[3] == rec))
+            logprob = -rate * T + num_sent * (np.log(rate * T))  \
+                - np.sum(np.log(np.arange(1, num_sent + 1, 1)))
+            total_prob += logprob
+    return total_prob
 
-            rate = node.rates[rec.name][normal_ix][clean_ix]
-            num_sent = np.sum((data[2] == node.name) * (data[3] == rec.name)))
-            logprob = -rate * T + num_sent * (np.log(rate * T)) \
-              - np.sum(np.log(np.arange(1, num_sent+1, 1_)))
+def qij_over_qji(zi, zj, con_cdf, con_pdf):
+    def qij(zi, zj, con_cdf=con_cdf, con_pdf=con_pdf):
+        """
+        Returns the probability of proposing zj given we are in
+        zi.  This is used because we are using a non-uniform
+        MCMC sampler.  This is very non-general.  It only applies
+        to the example in munsky's original code.
+
+        Notes
+        -----
+
+        The convolution of a normal random variable with mean 0 and
+        standard deviation sigma and a continuous uniform random
+        variable on (a,b) is given by
+
+        (norm.cdf((x-a)/sigma) - norm.cdf((x-b)/sigma))/b-a
+        """
+        pc = norm.pdf(zj['C'] - zi['C'], 0, 100) * \
+          (1 - con_cdf(zi['C'] - zi['B'])) + \
+          con_pdf(zj['C'] - zi['B']) * \
+          con_cdf(zi['C'] - zi['B'])
+
+        prob_zjc_less_than_zjb = (1 - con_cdf(zi['C'] - zi['B'])) * \
+            norm.cdf(zi['B'] - zi['C'], 0 , 20000**.5)
+
+        pd = prob_zjc_less_than_zjb * max(0, 0 < zj['D'] - zj['C'] < 50) + \
+            (1 - prob_zjc_less_than_zjb) * max(0, 0 < zj['D'] - zj['B'] < 50)
+        return pc * pd
+    return np.log(qij(zj, zi)) - np.log(qij(zi,zj))
 
 
 
+def convoluted_cdf_func(sigma, a,b, grain=.01):
+    """
+    Returns a function that Generates the cdf of the convolution of a
+    random variable with mean 0 and standard deviation sigma and
+    a uniform random variable on the interval (a,b).
+        """
+    x = np.arange(-4 *sigma + a, 4 * sigma + b, grain)
+    #support to consider
+    con_pdf = (norm.cdf((x - a) / sigma) -
+               norm.cdf((x - b) / sigma)) / (b - a)
+    # the convoluted pdf
+    con_cdf = np.cumsum(con_pdf)/np.sum(con_pdf)
+    # approximate cdf
+    def get_prob(t, support=x, cdf=con_cdf):
+        if t > max(support):
+            return 1
+        elif t < min(support):
+            return 0
+        else:
+            idx = np.argmin(t > support)
+            return cdf[idx]
+    return get_prob
 
-
+def convoluted_pdf_func(x, sigma=100, a=0, b=50):
+    return (norm.cdf((x-a)/sigma) - norm.cdf((x-b)/sigma))/ (b - a)
 
 
 
