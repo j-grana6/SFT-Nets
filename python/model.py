@@ -7,6 +7,7 @@ from sft import *
 from sft_net import *
 from tools import *
 from sft_mcmc import MCMC_SFT
+from sft_mcmc_old import MCMC_SFT_old
 
 #  Create 4 nodes
 A = SFT('A', ['normal', 'infected'], ['B', 'C'],
@@ -36,23 +37,40 @@ print data[-1]
 guess_times = {'A': 0, 'B': 5000, 'C': 4000, 'D': 4500}
 lp = -np.inf
 # This loop picks starting values for the MCMC
-for j in np.arange(1,13000,500):
-    for k in np.arange(1,13000, 500):
-        s0 =  {'A': 0, 'B': j, 'C': k, 'D': j+5}
+# It loops though possible values of B and C by 500
+# and sets D 'close' to the minimum of the two
+for j in np.arange(1000,10000,1000):
+    for k in np.arange(1000,10000, 1000):
+        s0 =  {'A': 0, 'B': j, 'C': k-1, 'D': min(j,k) + 10}
         newprob = prob_model_given_data(net, data[1], s0,
                                         data[2], data[3], 10000)
+        print newprob
         if newprob > lp:
             lp = newprob
             guess_times = s0
-        s0 = {'A': 0, 'B': j, 'C': k, 'D': k+5}
-        newprob = prob_model_given_data(net, data[1], s0,
-                                        data[2], data[3], 10000)
-        if newprob > lp:
-            lp = newprob
-            guess_times = s0
-guess_times['C'] +=1
-res = MCMC_SFT(net, data, 10000, guess_times, 10000)
+print guess_times
+mcmc_steps1 = 200
+burn_in1 = 200
+mcmc_steps2 = 1000
+burn_in2 = 100
+prob_no_attacker = prob_model_no_attacker(net, data, 10000)
+print 'Probability cno attacker is', prob_no_attacker, '/n'
+res1 = MCMC_SFT(net, data, mcmc_steps1, guess_times, 10000)
+res2 = MCMC_SFT_old(net, data, mcmc_steps2, guess_times, 10000)
+prob_with_attacker1 = np.sum(res1[1][burn_in1 : ])/(mcmc_steps1 - burn_in1)
+prob_with_attacker2 = np.sum(res2[1][burn_in2 : ])/(mcmc_steps2 - burn_in2)
 
-## Probability given no attacker is just the probability of the time
-## time sequence of messages.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
