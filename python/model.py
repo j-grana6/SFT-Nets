@@ -62,7 +62,7 @@ res1 = MCMC_SFT(net, data, mcmc_steps1, guess_times, 10000)
 res2 = MCMC_SFT_old(net, data, mcmc_steps2, guess_times, 10000)
 prob_with_attacker1 = np.sum(res1[1][burn_in1 : ])/(mcmc_steps1 - burn_in1)
 prob_with_attacker2 = np.sum(res2[1][burn_in2 : ])/(mcmc_steps2 - burn_in2)
-
+true_times = data[-1]
 # The original uniform MCMC random sampler works better than the
 # modified one.  It is faster (in terms of time/sample) and also
 # converges quicker.
