@@ -43,12 +43,12 @@ for j in np.arange(1000,10000,1000):
             lp = newprob
             guess_times = s0
 print guess_times
-mcmc_steps1 = 200
+mcmc_steps1 = 1000
 burn_in1 = 200
-mcmc_steps2 = 1000
-burn_in2 = 100
+mcmc_steps2 = 5000
+burn_in2 = 500
 prob_no_attacker = prob_model_no_attacker(net, data, 10000)
-print 'Probability cno attacker is', prob_no_attacker, '/n'
+print 'Probability no attacker is', prob_no_attacker, '/n'
 res1 = MCMC_SFT(net, data, mcmc_steps1, guess_times, 10000)
 res2 = MCMC_SFT_old(net, data, mcmc_steps2, guess_times, 10000)
 prob_with_attacker1 = np.sum(res1[1][burn_in1 : ])/(mcmc_steps1 - burn_in1)
