@@ -52,7 +52,9 @@ print 'Probability no attacker is', prob_no_attacker, '/n'
 res1 = MCMC_SFT(net, data, mcmc_steps1, guess_times, 10000)
 res2 = MCMC_SFT_old(net, data, mcmc_steps2, guess_times, 10000)
 prob_with_attacker1 = np.sum(res1[1][burn_in1 : ])/(mcmc_steps1 - burn_in1)
+# Value of likelihood with MCMC1 method
 prob_with_attacker2 = np.sum(res2[1][burn_in2 : ])/(mcmc_steps2 - burn_in2)
-
-
+#Value of likelihood with MCMC2 method
+true_times =data[-1]
+#The true infection times
 
