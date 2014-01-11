@@ -109,15 +109,27 @@ def gen_data(T, SFTNet, s0):
             state = SFTNet.get_state()
             # Update state
         n_reactions += 1
+    transmissions = {}
+    for node in SFTNet.nodes:
+        for o_node in node.sends_to:
+            key = node.name+'-'+str(o_node)
+            from_node = np.asarray(reaction_sender) == node.name
+            to_o_node = np.asarray(reaction_receiver) == o_node
+            times = from_node * to_o_node
+            transmissions[key] = np.asarray(reaction_times)[times]
+
     return (np.asarray(msgs_sent), np.asarray(reaction_times),
             np.asarray(reaction_sender),
-            np.asarray(reaction_receiver), n_reactions, infect_times)
+            np.asarray(reaction_receiver), n_reactions, transmissions,
+            infect_times)
 
 
 
-def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
-                          receivers, T):
+def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: Profile this
     """
+    Returns a tuple whose first element is P(z | attacker) and the
+    second element is P(data | z, attacker).
+
     Parameters
     ----------
 
@@ -147,6 +159,10 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
 
     """
     eps = 0
+    msg_times = data[1]
+    senders =data[2]
+    receivers=data[3]
+    transmissions = data[-2]
     # First order the infections
     sorted_infect = sorted(infect_times.iteritems(),
                            key=operator.itemgetter(1))
@@ -186,8 +202,7 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
     prob_data = 0
     for node, time in sorted_infect:
         # For each node.  node is the node name, not the instance
-        _node_ix = SFTNet.node_names.index(node)
-        _node_inst = SFTNet.nodes[_node_ix]
+        _node_inst = SFTNet.node_dict[node]
         # We need the node instance here.  This should be added as a method
         # of SFTNet instance
         norm_ix = _node_inst.states.index('normal')
@@ -200,40 +215,34 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
                 # Because of problems with 0 in logs
                 # we use this for nodes that are initially
                 # infected
-                num_msgs = np.sum((senders == node) *
-                                  (receivers == o_node))
+                num_msgs = len(transmissions[node+'-'+o_node])
                 prob_msgs = (num_msgs *
                     np.log(
                     np.sum(_node_inst.rates[o_node][infect_ix, :]) * T) -
-                    np.sum(np.log(np.arange(1, num_msgs  + 1))) -
+                    logn_fact[num_msgs - 1] -
                     np.sum(_node_inst.rates[o_node][infect_ix, :]) * T)
                 prob_data += prob_msgs
-            elif time >= T - 2:
-                num_msgs = np.sum((senders == node) *
-                                  (receivers == o_node))
+            elif time >= T:
+                rate =  np.sum(_node_inst.rates[o_node][norm_ix, :])
+                num_msgs = len(transmissions[node+'-'+o_node])
                 prob_msgs = (num_msgs *
-                    np.log(
-                    np.sum(_node_inst.rates[o_node][infect_ix, :]) * T) -
-                    np.sum(np.log(np.arange(1, num_msgs  + 1))) -
-                    np.sum(_node_inst.rates[o_node][infect_ix, :]) * T)
+                    np.log(rate * T) -
+                    logn_fact[num_msgs  - 1] -
+                    rate * T)
                 prob_data += prob_msgs
             else:
-                num_before =  np.sum(((senders == node) *
-                                    (receivers == o_node)
-                                    )[msg_times <= time])
+                num_before =  np.searchsorted(
+                    transmissions[node+'-'+o_node],time)
                 # Number of reactions before
-                num_after = np.sum(((senders== node) *
-                                    (receivers == o_node)
-                                    )[msg_times > time])
-
+                num_after = len(transmissions[node+'-'+o_node]) - num_before
                 # Number of reactions after infection
                 prob_before = (num_before *
                             np.log(eps +
                             np.sum(_node_inst.rates[o_node][norm_ix, :]) *
-                            min(time + eps, T)) -
-                            np.sum(np.log(eps + np.arange(1, num_before+1))) -
+                            time) -
+                            logn_fact[num_before-1] -
                             np.sum(_node_inst.rates[o_node][norm_ix, :]) *
-                            min(time, T))
+                            time)
                 # prob before is the probability of node sending num_before
                 # messages to o_node before it gets infected.  This is a bit
                 # different from Munsky's in 3 ways.  The first is the min
@@ -250,12 +259,11 @@ def prob_model_given_data(SFTNet, msg_times, infect_times, senders,
                             np.log(eps +
                             np.sum(_node_inst.rates[o_node][infect_ix, :]) *
                             (T- time)) -
-                            np.sum(np.log(eps + np.arange(1, num_after + 1))) -
+                            logn_fact[num_after -1] -
                             np.sum(_node_inst.rates[o_node][infect_ix, :]) *
                             (T-time))
                 prob_data += prob_before + prob_after
-
-    return prob_sequence + prob_exact_times + prob_data
+    return [prob_sequence + prob_exact_times,  prob_data]
 
 def prob_model_no_attacker(SFTnet, data, T):
     """
@@ -336,8 +344,25 @@ def convoluted_pdf_func(x, sigma=100, a=0, b=50):
     return (norm.cdf((x-a)/sigma) - norm.cdf((x-b)/sigma))/ (b - a)
 
 
+def rhs_integral(SFTNet, data, T):
+    """
+    Returns \int_T^\infty P(d|z, attacker)P(z|attacker)
+    *Not* the log.
+    """
+    data_greater_t = {node.name: T+1 for node in SFTNet.nodes}
+    data_greater_t['A'] = 0 # Keep initially infected
+    p_data = prob_model_given_data(SFTNet, data, data_greater_t,T,
+                                   gen_logn_fact(data))[1]
+    prob_z = 0
+    for node in SFTNet.nodes:
+        for rec in node.sends_to:
+            if node.location =='external':
+                infect_ix = node.states.index('infected')
+                mal_ix = node.messages.index('malicious')
+                rate = node.rates[rec][infect_ix, mal_ix]
+                prob_z += -rate * T
+    return np.exp(p_data + prob_z)
 
-
-
-
+def gen_logn_fact(data):
+    return np.cumsum(np.log(np.arange(1, len(data[0])+2,1)))
 

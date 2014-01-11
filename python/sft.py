@@ -38,6 +38,9 @@ class SFT(object):
         When the SFT is in an infected state, it sends clean messages to 'A'
         at a rate of 1 and malicious messages at a rate of .00001.
 
+    location : str
+        Can be 'internal' or 'external'
+
 
     Notes
     -----
@@ -67,13 +70,15 @@ class SFT(object):
     """
 
 
-    def __init__(self, name, states, sends_to, rates, messages):
+    def __init__(self, name, states, sends_to, rates, messages, location):
+        ## TODO Get infect_ix and malicious_ix here
         self.name = name
         self.states = states
         self.sends_to = sends_to
         self.rates = rates
         self.messages = messages
         self.state = None
+        self.location = location
 
     def react(self, message, source):
         if message.lower() == 'malicious':

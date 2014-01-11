@@ -57,3 +57,4 @@ def MCMC_SFT(SFTNet, data, N, z0, T):
         n += 1
     return time_samples, probs, z1.keys()
     # For some reason the dictionary was switching order
+print 'ha', '\n'
