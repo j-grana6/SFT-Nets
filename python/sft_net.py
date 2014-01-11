@@ -69,6 +69,12 @@ class SFTNet(object):
         self._gen_transmission()
         self._gen_mal_transmission()
         self.node_names = [x.name for x in nodes]
+        self.node_dict = dict([(node.name, node) for node in self.nodes])
+        self.internals = [ node for node in self.nodes
+                           if node.location == 'internal']
+        self.externals = [ node for node in self.nodes
+                           if node.location=='external']
+
 
     def _gen_cross_s(self):
         """

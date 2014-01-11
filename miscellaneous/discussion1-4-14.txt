@@ -1,0 +1,11 @@
+jg : From now on, let's each work on our own branch and do pull requests
+     to master.  It will make it easier to do/undo any changes.  I renamed
+     your changes to model.py as a new file (which in hindsight, wasn't
+     the easiest way to go about it), but the git tree is a little messed
+     up now.  I think PR's will be the best.  To create a branch just do
+
+     git branch dps_branch
+     git checkout dps_branch
+
+     The first line creates the branch and the second line switches to it.
+
