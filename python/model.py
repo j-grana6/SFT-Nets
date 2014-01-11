@@ -79,7 +79,7 @@ mcmc_results = Results(mcmc, data[-1], prob_no_attacker,
 
 idnum = np.str(np.random.random())[:15]
 simple_result.write_results(idnum)
-mcmc_results.write_results(idnum)
+mcmc_results.write_results('MH' + idnum)
 ### Write Results.  Mix this in with the results class
 
 
