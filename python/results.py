@@ -4,6 +4,7 @@ A script to handle results, make plots, etc
 import numpy as np
 from matplotlib import pyplot as plt
 import os
+import copy
 
 class Results(object):
     """

@@ -51,8 +51,8 @@ for j in np.arange(1000,10000,1000):
             guess_times = s0
     print j
 print guess_times
-monte_carlo_samples = 500
-mcmc_samples = 500
+monte_carlo_samples = 30000
+mcmc_samples = 30000
 
 
 prob_no_attacker = prob_model_no_attacker(net, data, T)
@@ -77,8 +77,9 @@ simple_result = Results(smc, data[-1], prob_no_attacker,
 mcmc_results = Results(mcmc, data[-1], prob_no_attacker,
                        prob_true_value, data, metropolis = True)
 
-
-
+idnum = np.str(np.random.random())[:15]
+simple_result.write_results(idnum)
+mcmc_results.write_results(idnum)
 ### Write Results.  Mix this in with the results class
 
 
