@@ -32,10 +32,7 @@
 	conditioned on), we must integrate the expression in Eq. 17 over the
 	degrees of freedom that the observation operator projects out. In
 	general, a horrible problem.  \textcolor{red}{In our case, this translates
-	into integrating over the infection times.} \textcolor{blue}{dx: Do we only 
-	integrate over the infection times? Two questions: 1. do you mean **observed**
-	infection times? Or **actual** infection times (maybe beyond T)? 
-	2. Don't we also concern about the contents of the messages?}
+	into integrating over the infection times.} 
 
 	However the scenario that Brian constructed is special ...
 
@@ -55,17 +52,190 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{The Likelihood-ASCII 4-8}
-	Combining the two assumptions above in our scenario, we might attepmpt to write down
-	in closed form the likelihood of a sequence of observed (time-stamps of) emissions
-	from an arbitrary node v across all time, given that v is uninfected up to
-	time $z_{v}$, when it gets infected. 
+	\textcolor{red}{Recall that we are interested in finding the model to describe
+	the transmission of messages nodes.
+	Combining the time-stamp assumption of the observation operator and the assumption
+	that infected nodes stay infected}, we can write down in closed form of a sequence of
+	(time-stamps of) emissions from an arbitrary node $v$ across all time, given that 
+	$v$ is uninfected up to $z_{v}$, when it gets infected. \textcolor{red}{By following
+	the same notation in the paper, we express this likelihood in math as
+	following.}
 
-	Note that this is conditioning on *part* of what it hidden from the
-	observation operator, but not everything.  Formally, to write down
-	this likelihood we are actually integrating over the values of the
-	other hidden variables concerning the messages from v that we cannot
-	observe, namely the specifications of whether those messages contain
-	malware or not. But for us that integration is trivial.
+	\begin{equation*}
+		P(\vec{\Upsilon_{v}}, \vec{\Delta\tau_{v}} | \sigma_{v}(t < z_{v}) = 
+		\text{`normal'}, \sigma_{v}(t \geq z_{v}) = \text{`infected'})
+	\end{equation*}
+
+	Note that this is conditioning on *part* of what it hidden in the
+	output of the observation operator, but not everything.  Formally, to
+	write down this likelihood we are actually integrating over the values
+	of the other hidden variables concerning the messages from v that we
+	cannot observe, namely the specifications of whether those messages
+	contain malware or not. But for us that integration is trivial. 
+	\textcolor{red}{That said, we are actually only integrating over the infection
+	times.}
+
+	However the likelihood that we want to calculate is different 
+	\textcolor{red}{because the above assumes the infection times are pre-specified. Our
+	case is different though.} For example, in the simplest scenarios we might want
+	to test, we would want the likelihood of our entire observation
+	sequence either conditioned on the premise that one particular node
+	v' is infected at t = 0 \textcolor{red}{corresponding to attacker existence}, or that
+	no nodes are ever infected \textcolor{red}{corresponding to no attacker}. Note
+	that in this likelihood we do NOT specify the times of infection for
+	the other nodes for the case that v' is infected at t = 0. In fact,
+	we don't even specify m, the number of nodes that get infected. 
+	\textcolor{red}{Therefore, for any arbitrary node $v \neq v'$, it might or might
+	not be infected at all time.}
+
+	\textcolor{red}{However, to calculate the likelihood of our entire observation
+	sequence, we are relying on the math expression above.} To see how, note that if we
+	knew the infection
+	times for all nodes $v$ in the net that get infected , $z_{v}$, then we are done 
+	\textcolor{red}{because in this case the 
+	likelihood can be decomposed as the sum of the expression across all infected 
+	nodes in the SFT net.} \textcolor{red}{In math, we say that in a N-node SFT net,
+	where $m \in [1,N]$ nodes get infected in the time interval $[0,T]$, it suffices to
+	specify a vector $\vec{z}$ of infection times such that $\vec{z} \in \cup_{1 \leq 
+	m \leq N}R^{m}$ to fix the likelihood of the data.} However, we do not know $\vec{z}$
+	\textcolor{blue}{dx:because they are random variables?} \textcolor{red}{In other
+	words, $\vec{z}$ are degrees of freedom projected out.}
+
+	Therefore to calculate $P(data d | \text{net infected at } t = 0)$, we need to do an
+	integral, integrating out the vector $z$. We can
+	decompose this integral as follows:
+
+	\begin{equation}
+	   \int dz P(data d, z | \text{net infected at } t = 0) = \\
+       	\int dz P(d | z, \text{net infected at } t = 0) P(z | \text{net infected at} t=0)
+	\end{equation}
+	
+	\textcolor{red}{Because the first term on the RHS is conditioned on $z$, we can 
+	calculate it as we just discussed.} What to do about the second?
+
+	To evaluate the second term in the RHS integrand, note that $z$ fixes
+	the sequence of successive node infections. Write that sequence as
+	$v(1), v(2), \ldots, v(m)$, so that $v(n)$ specifies what node was the $n^{th}$
+	to be infected, where we are assuming that $v(1)$ is infected at $t = 0$ (so
+	$z_{v(1)} = 0$), but that no other node is infected then, i.e., for all 
+	$i > 1$, $z_{v(i)} > 0$.
+
+	So with our new notation we can write
+
+	\begin{equation}
+	 P(z | \text{net infected at } t = 0) = P({z_{v(i)}}, {v(i)} | v(1), z_{v(1)} = 0)
+	\end{equation}
+	where curly brackets indicate a set. 
+
+	Note that with this new notation, we have $\int z = \sum_{v(i)} \int dz_{v(i)}$.
+	In particular, that sum includes all
+	subsets of all N nodes that form a directed acyclic path over the
+	network topology, including those subsets that do not involve all N
+	nodes. But it includes no other subsets.
+
+	Concentrate on any particular value of $\{v(i)\}$ and $\{z_{\{v(i)}\}\}$ occuring
+	inside this sum-interal. For that value we can expand the RHS of Eq. 2
+	as a product of N conditional distributions,
+
+	\begin{equation*}
+		P(v(2), z_{v(2)} |  v(1), z_{v(1)} = 0)    \times  
+		P(v(3), z_{v(3)} |  v(2), z_{v(2)}, v(1), z_{v(1)} = 0)    \times  \ldots
+	\end{equation*}
+
+	Next, use the network topology to figure out the set of edges exiting
+	$v(1)$ and write it as $C(1)$. Also define $\lambda(i,j)$ as the Poisson rate
+	constant for the composite process of \{a non-infection message goes
+	from infected node $v(i)$ to a non-infected node $v(j)$, or an infection
+	message going from an infected node v(i) to a non-infected node v(j)
+	and v(j) making a transition to being infected when that message
+	arrives\}.  Also define $\lambda(1)$ as $\sum_{j \in C(1)} \lambda(1,j)$,
+	i.e., the sum of the rate constants over all edges exiting $v(1)$. Then
+
+	\begin{equation*}
+		P(v(2), z_{v(2)} | v(1), z_{v(1)} = 0)  =
+		\lambda(1) e^{- \lambda(1) (z_{\{v(2)}\} - z_{\{v(1)\}})} 
+		\times \frac{\lambda(1,2)}{\lambda(1)}
+	\end{equation*}
+
+	in the usual way (e.g., as in the Gillespie algorithm -- the
+	expression on the RHS equals the probability that the first transition
+	among all the nodes that are connected to $v(1)$ occurs at the time
+	$z_{v(2)}$, times the probability that it is node $v(2)$ that makes that
+	transition). So after cancellation, we have
+	
+	\begin{equation*}
+	P(v(2), z_{v(2)} | v(1), z_{v(1)} = 0) =
+		\lambda(1, 2) e^{-|C(1)| \lambda \cdot (z_{\{v(2)\}} - z_{\{v(1))\}}}
+	\end{equation*}
+
+	where $\lambda$ is the sum of the (homogenous) background traffic rate
+	and infection message traffic rate. 
+
+	Note that $\lambda(1, 2) = 0$ if there is no edge going from $v(1)$ to
+	$v(2)$. If it were not for this fact, our formula for the conditional
+	distribution $P(v(2), z_{v(2)} | v(1), z_{v(1)} = 0)$ would not be
+	normalized.
+
+	Similarly, define $C(2)$ as the set of edges exiting either $v(1)$ or
+	$v(2)$, and define $\lambda(2) = \sum_{j \in C(2)} \lambda(2,j)$, i.e., the
+	sum of the rate constants over all edges exiting $v(2)$. (I'm pretty
+	sure that the possibility of a node being connected to both v(2) and
+	v(1) doesn't change the fact that this is the correct sum.)  Then use
+	our assumption of homogenous (infected node) rate constants to write
+
+	\begin{equation*}
+		P(v(3), z_{v(3)} | v(2), z_{v(2)}, v(1), z_{v(1)} = 0)  =  
+			K(3) \lambda e^{\lambda(2) (z_{\{v(3)\}} - z_{\{v(2))\}}} 
+	\end{equation*}
+
+	where $K(3)$ equals $1$ or $2$, depending on whether under the network
+	topology one or both of $v(1)$ and $v(2)$ are connected to $v(3)$, and
+	$\lambda$ is the homogenous rate constant.
+
+	We can keep iterating to evaluate the full term on the RHS of Eq. 2, and
+	use the result to write down the summand-integrand in Eq. 1. 
+
+	Note that only a tiny fraction of the points in $R^{N}$ are physically
+	possible. E.g., we can't have a node $v$ get infected at $t$, and then a
+	node $v"$ get infected at $t" > t$, and no other nodes ever get infected,
+	if due to the network topology the only way v" can get infected is
+	from $v$ via a bottleneck node $v'$ lying between $v$ and $v"$. This will be
+	reflected in the likelihood function - all disallowed points in $R^{N}$
+	will be have likelihood zero, and furthermore, the likelihood function
+	will be properly normalized to account for the contorted shape of the
+	set of allowed points.
+
+
+
+
+
+
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
