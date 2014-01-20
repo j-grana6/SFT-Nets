@@ -86,11 +86,11 @@
 	case is different though.} For example, in the simplest scenarios we might want
 	to test, we would want the likelihood of our entire observation
 	sequence either conditioned on the premise that one particular node
-	v' is infected at t = 0 \textcolor{red}{corresponding to attacker existence}, or that
+	$v'$ is infected at t = 0 \textcolor{red}{corresponding to attacker existence}, or that
 	no nodes are ever infected \textcolor{red}{corresponding to no attacker}. Note
 	that in this likelihood we do NOT specify the times of infection for
-	the other nodes for the case that v' is infected at t = 0. In fact,
-	we don't even specify m, the number of nodes that get infected. 
+	the other nodes for the case that $v'$ is infected at t = 0. In fact,
+	we don't even specify $m$, the number of nodes that get infected. 
 	\textcolor{red}{Therefore, for any arbitrary node $v \neq v'$, it might or might
 	not be infected at all time.}
 
@@ -99,7 +99,7 @@
 	knew the infection
 	times for all nodes $v$ in the net that get infected , $z_{v}$, then we are done 
 	\textcolor{red}{because in this case the 
-	likelihood can be decomposed as the sum of the expression across all infected 
+	likelihood can be decomposed as the product of the expression across all infected 
 	nodes in the SFT net.} \textcolor{red}{In math, we say that in a N-node SFT net,
 	where $m \in [1,N]$ nodes get infected in the time interval $[0,T]$, it suffices to
 	specify a vector $\vec{z}$ of infection times such that $\vec{z} \in \cup_{1 \leq 
@@ -107,13 +107,13 @@
 	\textcolor{blue}{dx:because they are random variables?} \textcolor{red}{In other
 	words, $\vec{z}$ are degrees of freedom projected out.}
 
-	Therefore to calculate $P(data d | \text{net infected at } t = 0)$, we need to do an
+	Therefore to calculate $P(d  | \text{net infected at } t = 0)$, we need to do an
 	integral, integrating out the vector $z$. We can
 	decompose this integral as follows:
 
 	\begin{equation}
-	   \int dz P(data d, z | \text{net infected at } t = 0) = \\
-       	\int dz P(d | z, \text{net infected at } t = 0) P(z | \text{net infected at} t=0)
+	   \int dz P(d, z | \text{net infected at } t = 0) = \\
+       	\int dz P(d | z, \text{net infected at } t = 0) P(z | \text{net infected at } t=0)
 	\end{equation}
 	
 	\textcolor{red}{Because the first term on the RHS is conditioned on $z$, we can 
@@ -129,17 +129,17 @@
 	So with our new notation we can write
 
 	\begin{equation}
-	 P(z | \text{net infected at } t = 0) = P({z_{v(i)}}, {v(i)} | v(1), z_{v(1)} = 0)
+	 P(z | \text{net infected at } t = 0) = P(\{z_{v(i)}\}, \{v(i)\} | v(1), z_{v(1)} = 0)
 	\end{equation}
 	where curly brackets indicate a set. 
 
-	Note that with this new notation, we have $\int z = \sum_{v(i)} \int dz_{v(i)}$.
+	Note that with this new notation, we have $\int z = \sum_{\{v(i)\}} \int dz_{\{v(i)\}}$.
 	In particular, that sum includes all
-	subsets of all N nodes that form a directed acyclic path over the
-	network topology, including those subsets that do not involve all N
+	subsets of all $N$ nodes that form a directed acyclic path over the
+	network topology, including those subsets that do not involve all $N$
 	nodes. But it includes no other subsets.
 
-	Concentrate on any particular value of $\{v(i)\}$ and $\{z_{\{v(i)}\}\}$ occuring
+	Concentrate on any particular value of $\{v(i)\}$ and $\{z_{\{v(i)\}}\}$ occuring
 	inside this sum-interal. For that value we can expand the RHS of Eq. 2
 	as a product of N conditional distributions,
 
@@ -152,14 +152,14 @@
 	$v(1)$ and write it as $C(1)$. Also define $\lambda(i,j)$ as the Poisson rate
 	constant for the composite process of \{a non-infection message goes
 	from infected node $v(i)$ to a non-infected node $v(j)$, or an infection
-	message going from an infected node v(i) to a non-infected node v(j)
-	and v(j) making a transition to being infected when that message
+	message going from an infected node $v(i)$ to a non-infected node $v(j)$
+	and $v(j)$ making a transition to being infected when that message
 	arrives\}.  Also define $\lambda(1)$ as $\sum_{j \in C(1)} \lambda(1,j)$,
 	i.e., the sum of the rate constants over all edges exiting $v(1)$. Then
 
 	\begin{equation*}
 		P(v(2), z_{v(2)} | v(1), z_{v(1)} = 0)  =
-		\lambda(1) e^{- \lambda(1) (z_{\{v(2)}\} - z_{\{v(1)\}})} 
+		\lambda(1) e^{- \lambda(1) (z_{\{v(2)\}} - z_{\{v(1)\}})} 
 		\times \frac{\lambda(1,2)}{\lambda(1)}
 	\end{equation*}
 
@@ -185,8 +185,8 @@
 	Similarly, define $C(2)$ as the set of edges exiting either $v(1)$ or
 	$v(2)$, and define $\lambda(2) = \sum_{j \in C(2)} \lambda(2,j)$, i.e., the
 	sum of the rate constants over all edges exiting $v(2)$. (I'm pretty
-	sure that the possibility of a node being connected to both v(2) and
-	v(1) doesn't change the fact that this is the correct sum.)  Then use
+	sure that the possibility of a node being connected to both $v(2)$ and
+	$v(1)$ doesn't change the fact that this is the correct sum.)  Then use
 	our assumption of homogenous (infected node) rate constants to write
 
 	\begin{equation*}
