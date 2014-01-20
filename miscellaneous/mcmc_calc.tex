@@ -53,7 +53,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{The Likelihood-ASCII 4-8}
 	\textcolor{red}{Recall that we are interested in finding the model to describe
-	the transmission of messages nodes.
+	the transmission of messages among nodes.
 	Combining the time-stamp assumption of the observation operator and the assumption
 	that infected nodes stay infected}, we can write down in closed form of a sequence of
 	(time-stamps of) emissions from an arbitrary node $v$ across all time, given that 
@@ -69,7 +69,7 @@
 	Note that this is conditioning on *part* of what it hidden in the
 	output of the observation operator, but not everything.  Formally, to
 	write down this likelihood we are actually integrating over the values
-	of the other hidden variables concerning the messages from v that we
+	of the other hidden variables concerning the messages from $v$ that we
 	cannot observe, namely the specifications of whether those messages
 	contain malware or not. But for us that integration is trivial. 
 	\textcolor{red}{That said, we are actually only integrating over the infection
