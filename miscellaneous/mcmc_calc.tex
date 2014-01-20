@@ -61,10 +61,16 @@
 	the same notation in the paper, we express this likelihood in math as
 	following.}
 
-	\begin{equation*}
-		P(\vec{\Upsilon_{v}}, \vec{\Delta\tau_{v}} | \sigma_{v}(t < z_{v}) = 
-		\text{`normal'}, \sigma_{v}(t \geq z_{v}) = \text{`infected'})
-	\end{equation*}
+	\begin{eqnarray*}
+		P(\vec{\Upsilon_{v}}, \vec{\Delta\tau_{v}} | \vec{\sigma_{v}(t < z_{v})} = 
+			\text{`normal'}, \vec{\sigma_{v}(t \geq z_{v})} = \text{`infected'})
+		= \\
+		\prod_{n = 1}^{K_{1}} P(\Upsilon_{v}, \Delta \tau (n) | \sigma_{v} = \text{`normal'})
+			\cdot  
+			\prod_{n = K_{1}}^{K} P(\Upsilon_{v}, \Delta \tau (n) | \sigma_{v} = \text{`infected'})
+	\end{eqnarray*}
+	
+	where $K_{1}$ is the number of emissions from node $v$ before the infected time, $z_{v}$.
 
 	Note that this is conditioning on *part* of what it hidden in the
 	output of the observation operator, but not everything.  Formally, to
