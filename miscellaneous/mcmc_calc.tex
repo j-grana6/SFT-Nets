@@ -147,7 +147,7 @@
 	Note that with this new notation, we have $\int dz = \sum_{\{v(i)\}} \int dz_{\{v(i)\}}$.
 	In particular, that sum includes all subsets of all $N$ nodes that form a directed 
         acyclic path over the network topology, including those subsets that do not involve all $N$
-	nodes. But it includes no other subsets.  \red{In other words, we sum over all allowable infection 
+	nodes. But it includes no other subsets.  \textcolor{red}{In other words, we sum over all allowable infection 
         orders.}
 
 	Concentrate on any particular value of $\{v(i)\}$ and $\{z_{\{v(i)\}}\}$ occuring
@@ -262,7 +262,37 @@ infected as given in $\{v(i)\}$.
 
 \section{Importance Sampling over $[0, \infty]^N$}
 
-DO a bunch of exponentials...
+The importance sampling ocer $[0, \infty]^N$ will start similarly to the Metropolis-Hastings by sampling infection order.
+
+A quick review on importance sampling.  Suppose we want to approximate
+\begin{align}
+\int dx f(x)p(x)
+\end{align}
+
+If we can sample from $p(x)$ we can just sample $X_1. X_2 ...X_N$ from $p$ and compute $\frac{1}{N}\sum_{i=1}^Nf(X_i)$.
+However, if we cannot sample from $p(x)$ but can sample from some other distribution $q(x)$, we can sample $X'_1, X'_2 ...X'_N$ from 
+$q(x)$ and compute $\frac{1}{N}\sum_{i=1}^Nw(X'_i)$ where $w(X'_i) = \frac{f(X'_i)p(X'_i)}{q(X'_i)}$.  
+
+In our case, the importance sampling algorithm will be as follows:
+
+
+\begin{itemize}
+\item Create a set $V$ that contains all allowable node infection orderings
+\item Initiate an infection order
+\item for $\mathbf{samp}$ in 1: imp samps
+\begin{itemize}
+\item if $\alpha$ $<$ $U(0,1)$ : keep the same infection order
+\item else : Draw a new infection order
+\item Draw $z_{v(j)}$ (the infection time of the $j$th node to be infected) recursively
+as $z_{v(j)} = \sum_{i=1}^{j-1}z_{v(i)} + \mathbf{EXP}(\sum_{i=1}^{j-1}\lambda^{'}_{i,j})$ 
+where $\lambda^{'}_{i,j}$ is the (possibly 0) rate of malicious message transmission from $i$ to $j$,  and $\mathbf{EXP}(y)$ is 
+an exponential random variable with rate parameter $y$
+\item Given a draw of $z$, we can compute $q(z)$ as $\prod_{v(j)\in V}(\sum_{i=1}^{j-1}\lambda^{'}_{i,j})\exp^{-((\sum_{i=1}^{j-1}\lambda^{'}_{i,j})\Delta z_v(j)}$
+where $\Delta z_{v(j)} = z_{v(j)} - z_{v(j-1)}$.
+\item Record $X_{\mathbf{samp}} = \frac{P(data |z, \text{infected})P(z|\text{infected})}{q(z)}$
+\end{itemize}
+\item The integral approximation is then $\frac{1}{\text{imp samps}}\sum_{i=1}^{imp samps}X_i$
+\end{itemize}
 
 
 \end{document}
