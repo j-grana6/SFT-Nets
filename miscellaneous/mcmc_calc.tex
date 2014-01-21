@@ -222,42 +222,47 @@
 	will be properly normalized to account for the contorted shape of the
 	set of allowed points.
 
-
-
-
-
-
-
-
-		
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 \section{MCMC Methods-ASCII 9-11 and beyond}
+
+Unfortunately, due to the contorted shape of the subset of
+$R^N$ of $z$'s that are actually allowed (given the network topology)
+discussed above, I don't think we can do the sum-integral to give our
+likelihood in closed form. In fact, even if we fix $\{v(i)\}$, I don't
+think we can do the associated integral in closed form. For the same
+reason, simple sampling MC with a uniform distribution over $[0, T]^m$
+(where m is the number of nodes that get infected in $[0, T]$, specified
+by $\{v(i)\}$) may be quite inefficient.
+
+This leaves us with 3 ways to estimate the integral
+
+\subsection{Metropolis Hastings over $[0, \infty]^N$}
+
+The flow is as follows:
+\begin{itemize}
+\item Create a set $V$ that contains all allowable node infection orderings
+\item Initiate an allowable $\{z_0\}$.
+\item Initiate $\{v_0(i)\}$
+\begin{itemize}
+\item for sample in 1:number of mcmc samples
+\item if $\alpha$ $<$ $U(0,1)$ : $v_1 = v_0$
+\item else : Draw a new ordering, $v_1$ from $V$
+\item Define $\{z'_1(i)\} = \{z_0(i) + \mathcal{N}_i(0, \sigma)\}$.
+\item Let $\{z_1(i)\}$ be $\{z'_1(i)\}$ in order.
+\item Using abusive notation assume that the $j$ th element of $\{z_1(i)\}$ corresponds is the infection time of the $j$ th node to get
+infected as given in $\{v(i)\}$.
+\item If $\frac{P(z_1 | \text{net infected})}{P(z_0 | \text{net infected})} > \mathbf{U}(0,1)$
+\begin{itemize}
+\item $z_0 =z_1$
+\item $v_0 = v_1$
+\end{itemize}
+\item Record $z_0$, $v_0$ and $P(D | \{z(i)\}, \text{net infected} )$
+\end{itemize}
+\item The value of the integral is the average over all of the $P(D | \{z(i)\}, \text{net infected} )$
+\end{itemize}
+
+\section{Importance Sampling over $[0, \infty]^N$}
+
+DO a bunch of exponentials...
 
 
 \end{document}
