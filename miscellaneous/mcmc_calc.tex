@@ -1,12 +1,13 @@
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{color}
-\usepackage{mathrsfs}
 
 \begin{document}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Background-ASCII 1-3}
+
+\subsection{The Observation Operator}
 
 	Recall that in general, an observation operator is an arbitrary
 	noninvertible projection from the space of sequences (the state-space
@@ -23,6 +24,7 @@
 	observation operator is not invertible so we can't just apply it to what we observed
 	as an attempt to get the underlying model.}
 
+\subsection{Likelihood issues}
 	\textcolor{red}{In general, one way to pick the best model is to use maximum
 	likelihood} However our likelihood function gives the likelihood of
 	the sequence of fully-specified state-space variables (see Eq. 17
@@ -35,7 +37,8 @@
 	general, a horrible problem.  \textcolor{red}{In our case, this translates
 	into integrating over the infection times.} 
 
-	However the scenario that Brian constructed is special ...
+\subsection{Our Special Scenario}	
+        However the scenario that Brian constructed is special ...
 
 	In this scenario, what the observation operator gives is the
 	time-stamps at which nodes emit messages. All other information -
@@ -53,33 +56,27 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{The Likelihood-ASCII 4-8}
-	\textcolor{red}{Recall that we are interested in finding the model to describe
+\subsection{If we knew the infection times...}	
+    \textcolor{red}{Recall that we are interested in finding the model to describe
 	the transmission of messages among nodes.
 	Combining the time-stamp assumption of the observation operator and the assumption
 	that infected nodes stay infected}, we can write down in closed form the likelihood
         of a sequence of (time-stamps of) emissions from an arbitrary node $v$ across all time, given that 
 	$v$ is uninfected up to $z_{v}$, when it gets infected. \textcolor{red}{By following
-	the same notation in the paper, we express this likelihood as} 
+	the same notation in the paper, we express this likelihood as}
         
         %%% JG: What is \Upsilon here?  Are you trying to write down the likelihood that
         %%% gives P(data | z)?
-        %%% dx: Sorry, it indicates the messages sent. It should be \mathscr{Y} as in the paper.
-        %%%       I am trying to give that the probability of the message sequence of the node v,
-        %%%       given that v is infected at z_{v}. Note that we already know the state of v only 
-        %%%       changes once at z_{v}, from normal to infected. However, it emits messages 
-        %%%       given that before z_{v} it is uninfected and at and after z_{v} it is infected.
-	\begin{eqnarray*}
-		P(\vec{\mathscr{Y}_{v}}, \vec{\Delta\tau_{v}} | \vec{\sigma_{v}(t < z_{v})} = 
-			\text{`normal'}, \vec{\sigma_{v}(t \geq z_{v})} = \text{`infected'})
-		= \\
-		\prod_{n = 1}^{k_{v1}} P(\mathscr{Y}_{v}, \Delta \tau (n) | \sigma_{v} = \text{`normal'})
-			\cdot  
-			\prod_{n = k_{v1}}^{K} P(\mathscr{Y}_{v}, \Delta \tau (n) | \sigma_{v} = \text{`infected'})
-	\end{eqnarray*}
+	%%% \begin{eqnarray*}
+	%%%	P(\vec{\Upsilon_{v}}, \vec{\Delta\tau_{v}} | \vec{\sigma_{v}(t < z_{v})} = 
+	%%%		\text{`normal'}, \vec{\sigma_{v}(t \geq z_{v})} = \text{`infected'})
+	%%%	= \\
+	%%%	\prod_{n = 1}^{K_{1}} P(\Upsilon_{v}, \Delta \tau (n) | \sigma_{v} = \text{`normal'})
+	%%%		\cdot  
+	%%%		\prod_{n = K_{1}}^{K} P(\Upsilon_{v}, \Delta \tau (n) | \sigma_{v} = \text{`infected'})
+	%%%\end{eqnarray*}
 	
-        % Is this ehat you meant?  It is a bit more explicit.  
-        % dx: actually I think we are talking about the same thing. I think put an ``equal" sign to 
-        %	     connect the two?
+        % Is this what you meant?  It is a bit more explicit.  
         \begin{align}
         P(data | z) = \prod_{v\in V}\frac{e^{-\lambda_{v1}z_v}(\lambda_{v1}z_v)^{k_{v1}}}{k_{v1}!}\times 
         \frac{e^{-(\lambda_{v2})(T-z_v)}(\lambda_{v2})(T-z_v)^{k_{v2}}}{k_{v2}!}
@@ -88,6 +85,8 @@
         is the number of messages emitted from node $v$ between $z_v$ and $T$, $\lambda_{v1}$ is 
         homogenous poisson transmission rate for node $v$ when it is uninfected and $\lambda_{v2}$ is the 
         homogenous poisson transmission rate for node $v$ when it is infected.  
+ 
+	%where $K_{1}$ is the number of emissions from node $v$ before the infected time, $z_{v}$.
 
 	Note that this is conditioning on *part* of what it hidden in the
 	output of the observation operator, but not everything.  Formally, to
@@ -97,8 +96,8 @@
 	contain malware or not. But for us that integration is trivial. 
 	\textcolor{red}{That said, we are actually only integrating over the infection
 	times.}
-
-	However the likelihood that we want to calculate is different 
+\subsection{The problem}
+	However the likelihood that we want to calculate is different than equation 1
 	\textcolor{red}{because the above assumes the infection times are pre-specified.} 
         For example, in the simplest scenarios we might want
 	to test, we would want the likelihood of our entire observation
@@ -109,39 +108,34 @@
 	the other nodes for the case that $v'$ is infected at t = 0. In fact,
 	we don't even specify $m$, the number of nodes that get infected. 
 	\textcolor{red}{In other words, there might even be some nodes that don't get 
-        infected by $T$, something we will discuss below.}
+        infected by $T$}
 
-	
-	However, we can use equation (1) to calculate the likelihood. To see how, note that
+
+	However, we can use equation (1) as part of the  likelihood. To see how, note that
         if we knew the infection times for all nodes $v$ in the net that get infected, 
-        $z_{v}$, then we are done because it is then trivial to calculate \\
-        $P(data | z, attacker)P(z |attacker)$. %\textcolor{red}{because in this case the 
+        $z_{v}$, then we are done because it is then trivial to calculate \
+        $P(data|z, attacker)P(z attacker)$.  %\textcolor{red}{because in this case the 
 	%likelihood can be decomposed as the product of the expression across all infected 
 	%nodes in the SFT net.} \textcolor{red}{In math, we say that in a N-node SFT net,
 	%where $m \in [1,N]$ nodes get infected in the time interval $[0,T]$, it suffices to
 	%specify a vector $\vec{z}$ of infection times such that $\vec{z} \in \cup_{1 \leq 
 	% m \leq N}R^{m}$ to fix the likelihood of the data.} 
-        However, we do not know $\vec{z}$. 
-        \textcolor{blue}{dx: actually if we knew z, we don't even need to split the likelihood
-        to be a product of the two conditional probabilities. I still think we should explain why
-        in this case, the calculation is trivial. Also we should be explicit what specification of z
-        can be used to fix the likelihood. So do you think we really should comment David's 
-        original word out?}
-	
+        However, we do not know $\vec{z}$
+	%\textcolor{blue}{dx:because they are random variables?} Yes, that is true.
 
 	Therefore to calculate $P(data  | \text{net infected at } t = 0)$, we need to do an
-	integral, integrating out the vector $z$. We can
-	decompose this integral as follows:
+	integral, integrating out the vector $z$. We can decompose this integral as follows:
 
 	\begin{equation}
 	   \int dz P(d, z | \text{net infected at } t = 0) = \\
        	\int dz P(d | z, \text{net infected at } t = 0) P(z | \text{net infected at } t=0)
 	\end{equation}
 	
-	\textcolor{red}{Because the first term on the RHS is conditioned on $z$, we can 
-	calculate it as we just discussed.} What to do about the second?
+	\textcolor{red}{The first term on the RHS is just equation 1 and is trivial to compute.} 
+        What to do about the second?
 
-	To evaluate the second term in the RHS integrand, note that $z$ fixes
+\subsection{Calculating P(z)}
+        To evaluate the second term in the RHS integrand, note that $z$ fixes
 	the sequence of successive node infections. Write that sequence as
 	$v(1), v(2), \ldots, v(m)$, so that $v(n)$ specifies what node was the $n^{th}$
 	to be infected, where we are assuming that $v(1)$ is infected at $t = 0$ (so
@@ -304,6 +298,8 @@ where $\Delta z_{v(j)} = z_{v(j)} - z_{v(j-1)}$.
 \end{itemize}
 \item The integral approximation is then $\frac{1}{\text{imp samps}}\sum_{i=1}^{imp samps}X_i$
 \end{itemize}
+
+\subsection{Importance sampling over $[0, T]$}
 
 
 \end{document}
