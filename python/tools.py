@@ -133,20 +133,14 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
     Parameters
     ----------
 
-    net : SFTNet instance
+    SFTNet : SFTNet instance
         An SFTNet
 
-    msg_times : list
-        A list of times of transmissions (in order)
+    data : list
+        Output of gendata
 
     infect_times : dict
         Dictionary of infection times
-
-    senders : list
-        List of senders of messages.  Order is given by msg_times.
-
-    receivers : list
-        List of receivers of messages.  Order is given by msg times.
 
     T : float
         Total running time
@@ -159,13 +153,12 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
 
     """
     eps = 0
-    msg_times = data[1]
-    senders =data[2]
-    receivers=data[3]
     transmissions = data[-2]
     # First order the infections
     sorted_infect = sorted(infect_times.iteritems(),
                            key=operator.itemgetter(1))
+    not_infected = [nd for nd in SFTNet.node_names \
+                    if nd not in infect_times.keys()]
     # Creates a list of tuples and then sorts by the value
     state = ['infected'] + (len(SFTNet.nodes) - 1) * ['normal']
     # Assuming the first node in SFTNet.nodes is infected.
@@ -199,6 +192,37 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
         time_minus_1 = time
         ## The above loop combines the first 2 functions of Munsky's
         ## matlab code.
+
+    deltat = T - time_minus_1
+    noinfect_prob = 0
+    for node in not_infected:
+        infect_ix = SFTNet.node_names.index(node)
+        # The index of the node that gets infected
+        cross_S_ix = SFTNet.cross_S.index(state)
+        # The state of the net when the node gets infected
+        mal_trans = SFTNet.mal_trans_mats[cross_S_ix]
+        # The transmission matrix of malicious messages given config
+        prob_node = np.sum(mal_trans[:, infect_ix])
+        # This is the sum of all of the rate constants connected to the node
+        noinfect_prob += - prob_node * deltat
+
+    prob_no_infect_data = 0
+    for node in not_infected:
+        # For each node.  node is the node name, not the instance
+        _node_inst = SFTNet.node_dict[node]
+        # We need the node instance here.  This should be added as a method
+        # of SFTNet instance
+        norm_ix = _node_inst.states.index('normal')
+        # Index of normal state
+        for o_node in _node_inst.sends_to :
+            rate =  np.sum(_node_inst.rates[o_node][norm_ix, :])
+            num_msgs = len(transmissions[node+'-'+o_node])
+            prob_msgs = (num_msgs *
+                    np.log(rate * T) -
+                    logn_fact[num_msgs] -
+                    rate * T)
+            prob_no_infect_data += prob_msgs
+
     prob_data = 0
     for node, time in sorted_infect:
         # For each node.  node is the node name, not the instance
@@ -219,16 +243,8 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
                 prob_msgs = (num_msgs *
                     np.log(
                     np.sum(_node_inst.rates[o_node][infect_ix, :]) * T) -
-                    logn_fact[num_msgs - 1] -
+                    logn_fact[num_msgs] -
                     np.sum(_node_inst.rates[o_node][infect_ix, :]) * T)
-                prob_data += prob_msgs
-            elif time >= T:
-                rate =  np.sum(_node_inst.rates[o_node][norm_ix, :])
-                num_msgs = len(transmissions[node+'-'+o_node])
-                prob_msgs = (num_msgs *
-                    np.log(rate * T) -
-                    logn_fact[num_msgs  - 1] -
-                    rate * T)
                 prob_data += prob_msgs
             else:
                 num_before =  np.searchsorted(
@@ -240,7 +256,7 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
                             np.log(eps +
                             np.sum(_node_inst.rates[o_node][norm_ix, :]) *
                             time) -
-                            logn_fact[num_before-1] -
+                            logn_fact[num_before] -
                             np.sum(_node_inst.rates[o_node][norm_ix, :]) *
                             time)
                 # prob before is the probability of node sending num_before
@@ -259,11 +275,13 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
                             np.log(eps +
                             np.sum(_node_inst.rates[o_node][infect_ix, :]) *
                             (T- time)) -
-                            logn_fact[num_after -1] -
+                            logn_fact[num_after] -
                             np.sum(_node_inst.rates[o_node][infect_ix, :]) *
                             (T-time))
                 prob_data += prob_before + prob_after
-    return [prob_sequence + prob_exact_times,  prob_data]
+
+
+    return [prob_sequence + prob_exact_times + noinfect_prob,  prob_data]
 
 def prob_model_no_attacker(SFTnet, data, T):
     """
@@ -285,63 +303,66 @@ def prob_model_no_attacker(SFTnet, data, T):
             total_prob += logprob
     return total_prob
 
-def qij_over_qji(zi, zj, con_cdf, con_pdf):
-    def qij(zi, zj, con_cdf=con_cdf, con_pdf=con_pdf):
-        """
-        Returns the probability of proposing zj given we are in
-        zi.  This is used because we are using a non-uniform
-        MCMC sampler.  This is very non-general.  It only applies
-        to the example in munsky's original code.
 
-        Notes
-        -----
+## I'm pretty sure we can delete this stuff, we found a better way
+## to construct a proposal distribution
+# def qij_over_qji(zi, zj, con_cdf, con_pdf):
+#     def qij(zi, zj, con_cdf=con_cdf, con_pdf=con_pdf):
+#         """
+#         Returns the probability of proposing zj given we are in
+#         zi.  This is used because we are using a non-uniform
+#         MCMC sampler.  This is very non-general.  It only applies
+#         to the example in munsky's original code.
 
-        The convolution of a normal random variable with mean 0 and
-        standard deviation sigma and a continuous uniform random
-        variable on (a,b) is given by
+#         Notes
+#         -----
 
-        (norm.cdf((x-a)/sigma) - norm.cdf((x-b)/sigma))/b-a
-        """
-        pc = norm.pdf(zj['C'] - zi['C'], 0, 100) * \
-          (1 - con_cdf(zi['C'] - zi['B'])) + \
-          con_pdf(zj['C'] - zi['B']) * \
-          con_cdf(zi['C'] - zi['B'])
+#         The convolution of a normal random variable with mean 0 and
+#         standard deviation sigma and a continuous uniform random
+#         variable on (a,b) is given by
 
-        prob_zjc_less_than_zjb = (1 - con_cdf(zi['C'] - zi['B'])) * \
-            norm.cdf(zi['B'] - zi['C'], 0 , 20000**.5)
+#         (norm.cdf((x-a)/sigma) - norm.cdf((x-b)/sigma))/b-a
+#         """
+#         pc = norm.pdf(zj['C'] - zi['C'], 0, 100) * \
+#           (1 - con_cdf(zi['C'] - zi['B'])) + \
+#           con_pdf(zj['C'] - zi['B']) * \
+#           con_cdf(zi['C'] - zi['B'])
 
-        pd = prob_zjc_less_than_zjb * max(0, 0 < zj['D'] - zj['C'] < 50) + \
-            (1 - prob_zjc_less_than_zjb) * max(0, 0 < zj['D'] - zj['B'] < 50)
-        return pc * pd
-    return np.log(qij(zj, zi)) - np.log(qij(zi,zj))
+#         prob_zjc_less_than_zjb = (1 - con_cdf(zi['C'] - zi['B'])) * \
+#             norm.cdf(zi['B'] - zi['C'], 0 , 20000**.5)
+
+#         pd = prob_zjc_less_than_zjb * max(0, 0 < zj['D'] - zj['C'] < 50) + \
+#             (1 - prob_zjc_less_than_zjb) * max(0, 0 < zj['D'] - zj['B'] < 50)
+#         return pc * pd
+#     return np.log(qij(zj, zi)) - np.log(qij(zi,zj))
 
 
 
-def convoluted_cdf_func(sigma, a,b, grain=.01):
-    """
-    Returns a function that Generates the cdf of the convolution of a
-    random variable with mean 0 and standard deviation sigma and
-    a uniform random variable on the interval (a,b).
-        """
-    x = np.arange(-4 *sigma + a, 4 * sigma + b, grain)
-    #support to consider
-    con_pdf = (norm.cdf((x - a) / sigma) -
-               norm.cdf((x - b) / sigma)) / (b - a)
-    # the convoluted pdf
-    con_cdf = np.cumsum(con_pdf)/np.sum(con_pdf)
-    # approximate cdf
-    def get_prob(t, support=x, cdf=con_cdf):
-        if t > max(support):
-            return 1
-        elif t < min(support):
-            return 0
-        else:
-            idx = np.argmin(t > support)
-            return cdf[idx]
-    return get_prob
+# def convoluted_cdf_func(sigma, a,b, grain=.01):
+#     """
+#     Returns a function that Generates the cdf of the convolution of a
+#     random variable with mean 0 and standard deviation sigma and
+#     a uniform random variable on the interval (a,b).
+#         """
+#     x = np.arange(-4 *sigma + a, 4 * sigma + b, grain)
+#     #support to consider
+#     con_pdf = (norm.cdf((x - a) / sigma) -
+#                norm.cdf((x - b) / sigma)) / (b - a)
+#     # the convoluted pdf
+#     con_cdf = np.cumsum(con_pdf)/np.sum(con_pdf)
+#     # approximate cdf
+#     def get_prob(t, support=x, cdf=con_cdf):
+#         if t > max(support):
+#             return 1
+#         elif t < min(support):
+#             return 0
+#         else:
+#             idx = np.argmin(t > support)
+#             return cdf[idx]
+#     return get_prob
 
-def convoluted_pdf_func(x, sigma=100, a=0, b=50):
-    return (norm.cdf((x-a)/sigma) - norm.cdf((x-b)/sigma))/ (b - a)
+# def convoluted_pdf_func(x, sigma=100, a=0, b=50):
+#     return (norm.cdf((x-a)/sigma) - norm.cdf((x-b)/sigma))/ (b - a)
 
 
 def rhs_integral(SFTNet, data, T):
@@ -364,5 +385,5 @@ def rhs_integral(SFTNet, data, T):
     return np.exp(p_data + prob_z)
 
 def gen_logn_fact(data):
-    return np.cumsum(np.log(np.arange(1, len(data[0])+2,1)))
+    return np.hstack((np.zeros(1), np.cumsum(np.log(np.arange(1, len(data[0])+2,1)))))
 

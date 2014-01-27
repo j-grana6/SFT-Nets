@@ -77,9 +77,9 @@ simple_result = Results(smc, data[-1], prob_no_attacker,
 mcmc_results = Results(mcmc, data[-1], prob_no_attacker,
                        prob_true_value, data, metropolis = True)
 
-idnum = np.str(np.random.random())[:15]
-simple_result.write_results(idnum)
-mcmc_results.write_results('MH' + idnum)
+#idnum = np.str(np.random.random())[:15]
+#simple_result.write_results(idnum)
+#mcmc_results.write_results('MH' + idnum)
 ### Write Results.  Mix this in with the results class
 
 
