@@ -6,8 +6,6 @@ def validate(order, sends_fr, s0):
 	"""
 	Ruturn a True or False to indicate whether this order is valid.
 
-	Parameters
-	----------
 	order: tuple
 		The order to be tested its validity
 
@@ -80,8 +78,6 @@ def gen_orderings(SFTnet,s0):
 	"""
 	Returns a list of all allowable node infection orderings.
 
-	Parameters
-	----------
 	SFTnet: SFTnet instance
 		The net where all allowable node infection orderings are computed
 
