@@ -252,13 +252,16 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
                 # Number of reactions before
                 num_after = len(transmissions[node+'-'+o_node]) - num_before
                 # Number of reactions after infection
-                prob_before = (num_before *
+                if num_before == 0 :
+                    prob_before = 0
+                else:
+                    prob_before = (num_before *
                             np.log(eps +
                             np.sum(_node_inst.rates[o_node][norm_ix, :]) *
-                            time) -
+                            min(T, time)) -
                             logn_fact[num_before] -
                             np.sum(_node_inst.rates[o_node][norm_ix, :]) *
-                            time)
+                            min(T, time))
                 # prob before is the probability of node sending num_before
                 # messages to o_node before it gets infected.  This is a bit
                 # different from Munsky's in 3 ways.  The first is the min
@@ -271,7 +274,10 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
                 # starts at time 0, not time 1.  Finally, I use numpy to compute
                 # the factorial instead of his function.  We will see if this is
                 # a significant bottle neck later.
-                prob_after = ( num_after *
+                if num_after == 0:
+                    prob_after = 0
+                else:
+                    prob_after = ( num_after *
                             np.log(eps +
                             np.sum(_node_inst.rates[o_node][infect_ix, :]) *
                             (T- time)) -
