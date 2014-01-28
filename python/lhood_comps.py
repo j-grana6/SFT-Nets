@@ -9,6 +9,8 @@ from results import Results
 def MCMC_MH(SFTNet, data, N, z0, T, uniform = True):
     #  TODO Need to profile this
     #  TODO: Need to make this more general.  Not trivial
+    #  TODO : Add sample from possible node orderings
+    
     """
     Performs MCMC integration using Metropolis Hastings.  Returns
     the sampled times, their associated probabilities and the
@@ -50,41 +52,19 @@ def MCMC_MH(SFTNet, data, N, z0, T, uniform = True):
     probs = []
     # container for probabilities
     num_internal = len(SFTNet.internals)
-    if uniform :
-        while n < N:
-            z1 = {nd: z0[nd] + np.random.normal() * 100
-                  for nd in z0}
-            z1['A'] = 0
-            p1 = prob_mod(z1)
-            if (p1[0] - p0[0] > np.log(np.random.random())):
-                    print 'A Jump at, ', n, 'to ', z1, 'with prob', p1, '\n'
-                    p0 = p1
-                    z0 = z1
-            for key, val in z0.iteritems():
-                time_samples[key].append(val)
-            probs.append(p0)
-            n += 1
-    # else:
-    #     con_cdf = convoluted_cdf_func(20000 **.5, 0, 50)
-    #     while n < N:
-    #         za = 0
-    #         zb = z0['B'] + np.random.normal() *  100
-    #         zc = min(z0['C'] + np.random.normal() *  100,
-    #                  zb + np.random.random()* 50)
-    #         zd = min(zb, zc) + np.random.random() * 50
-    #         z1 = dict(zip(['A', 'B', 'C', 'D'], [za, zb,zc, zd]))
-    #         p1 = prob_mod(z1)
-    #         if min(z1.values()) >=  0 and max(z1.values()) < T:
-    #             log_q_ratio = qij_over_qji(z0,z1, con_cdf, convoluted_pdf_func)
-    #             if (p1[0] - p0[0]  + log_q_ratio >
-    #                 np.log(np.random.random())):
-    #                 print 'A Jump at, ', n, 'to ', z1, 'with prob', p1, '\n'
-    #                 p0 = p1
-    #                 z0 = z1
-    #             for i in z0.keys():
-    #                 time_samples[i].append(z0[i])
-    #             probs.append(p0)
-    #             n += 1
+    while n < N:
+        z1 = {nd: z0[nd] + np.random.normal() * 100
+              for nd in z0}
+        z1['A'] = 0
+        p1 = prob_mod(z1)
+        if (p1[0] - p0[0] > np.log(np.random.random())):
+                print 'A Jump at, ', n, 'to ', z1, 'with prob', p1, '\n'
+                p0 = p1
+                z0 = z1
+        for key, val in z0.iteritems():
+            time_samples[key].append(val)
+        probs.append(p0)
+        n += 1
     probs = np.asarray(probs)
     out_ar = np.hstack((np.asarray(time_samples.values()).T, probs))
     columns = copy.copy(time_samples.keys())

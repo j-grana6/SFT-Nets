@@ -4,7 +4,7 @@ import operator
 from scipy.stats import poisson, norm
 
 
-def gen_data(T, SFTNet, s0):
+def gen_data(T, SFTNet, t0):
     """
 
     Parameters
@@ -22,7 +22,10 @@ def gen_data(T, SFTNet, s0):
         SFTNet.nodes
 
     """
-
+    ##Make s0
+    s0 = []
+    for nd in SFTNet.node_names:
+        s0.append(t0[nd])
     n_nodes = len(SFTNet.nodes)
     # Number of nodes
     reaction_times = []
