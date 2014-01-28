@@ -134,29 +134,9 @@ def gen_orderings(SFTnet,s0):
 
 # Test the gen_orderings function.
 if __name__ == '__main__':
-	from sft import *
-	from sft_net import *
+	from testing_net import *
 
-	# Create 4 nodes
-	A = SFT('A', ['normal', 'infected'], ['B', 'C'],
-		  {'B':np.array([[1, 0], [1, 1/10000.]]),
-		   'C': np.array([[1,0], [1,1/10000.]])},
-		   ['clean', 'malicious'], 'external')
-
-	B = SFT('B', ['normal', 'infected'], ['C', 'D'],
-		   {'C': np.array([[1,0], [1,.1]]),
-			'D' : np.array([[1,0], [1,.1]])},
-		   ['clean', 'malicious'], 'internal')
-
-	C = SFT('C', ['normal', 'infected'], ['D'],
-		   {'D': np.array([[1,0], [1,.1]])},
-		   ['clean', 'malicious'], 'internal')
-
-	D = SFT('D', ['normal', 'infected'], [], {}, [], 'internal')
-
-	# Create an SFT net
-	nodes = [A, B, C, D]
-	net = SFTNet(nodes)
+	# Initial net state
 	state0 = dict(A = 'infected',
 				  B = 'normal',
 				  C = 'normal',
