@@ -38,6 +38,8 @@ def go(net, T, t0, mcmc_samples):
     # It loops though possible values of B and C by 250
     # and sets D 'close' to the minimum of the two
     logn_fact = gen_logn_fact(data)
+    orderings = gen_orderings(net, t0)
+    orderings = [order for order in orderings if len(order) ==4]
     lp = -np.inf
     nodes_to_change = [nd for nd in net.node_names if t0[nd] == 'normal']
     nodes_no_change = [nd for nd in net.node_names if t0[nd] == 'infected']
@@ -58,7 +60,7 @@ def go(net, T, t0, mcmc_samples):
     #monte_carlo_samples = 30000
     prob_no_attacker = prob_model_no_attacker(net, data, T)
     prob_true_value = prob_model_given_data(net, data, data[-1], T, logn_fact)
-    mcmc = MCMC_MH(net, data, mcmc_samples, guess_times, T)
+    mcmc = MCMC_MH(net, data, mcmc_samples, guess_times, T, orderings, nodes_no_change)
 
     mcmc_results = Results(mcmc, data[-1], prob_no_attacker,
                            prob_true_value, data, metropolis = True)
