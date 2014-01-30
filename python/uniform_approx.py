@@ -62,7 +62,7 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
             # Initialize the vector of infection times
             times = [-1] * len(v)
             # Zip into a dict
-            zvec0 = dict(zip(node_names, times))
+            zvec0 = dict(zip(v, [0]*len(v)))
             # Number of nodes to be sampled. Initialize it as the length of 
             # the ordering, but initially infected node(s) will be removed 
             # because their infection times are deterministically 0, there
@@ -74,54 +74,45 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
                     zvec0[n] = 0
                     to_be_samp -= 1		
                 # Sample an user-specified number of times
-                for _ in range(samp_size):
-                    # If more nodes will be infected later on
-                    if to_be_samp > 0:
-                        # The way we do this is as follows. (1) The first node's 
-                        # infection time must be 0; (2) Assume there are r other
-                        # nodes than the first node in the ordering, then we
-                        # generate a list of size r, each element of which is
-                        # uniformly drawn from [1,T]; (3) Sort the list ascend and
-                        # assign each infection time to the nodes accordingly.
-                        # Initialize
-                        zvec = copy.copy(zvec0)
-                        # Sample infection times for initially normal nodes
-                        ran = np.random.randint(1, T, size = to_be_samp)
-                        # Sort infection times
-                        ran.sort()
-                        # Assign
-                        for n in v:
-                            if s0[n].lower() == 'normal':
-                                ix = v.index(n) - (len(v) - to_be_samp)
-                                zvec[n] = ran[ix]
-                        # If there are no other nodes than the initial node are infected 
-                    else:
-                        # Initialize
-                        zvec = copy.copy(zvec0)
-                        # Calculate P(data | z, attacker) and P(z | attacker)
-                        # given data.
-                    probs = prob_model_given_data(SFTnet,data,zvec,T,logn_fact)
-                    pz_a = probs[0]; pd_za = probs[1]
-                    # Combine them to get P(data | attacker)
-                    pd_a = pd_za + pz_a
-                    # Add the probability to samples
-                    samples.append(pd_a)
-
-        # If no node is infected at all time, corresponding to no attacker case.
-        else:
-            # Sample an user-specified number of times
-            for _ in range(samp_size):
+        for _ in range(samp_size):
+            # If more nodes will be infected later on
+            if to_be_samp > 0:
+                # The way we do this is as follows. (1) The first node's 
+                # infection time must be 0; (2) Assume there are r other
+                # nodes than the first node in the ordering, then we
+                # generate a list of size r, each element of which is
+                # uniformly drawn from [1,T]; (3) Sort the list ascend and
+                # assign each infection time to the nodes accordingly.
+                # Initialize
+                zvec = copy.copy(zvec0)
+                # Sample infection times for initially normal nodes
+                ran = np.random.randint(1, T, size = to_be_samp)
+                # Sort infection times
+                ran.sort()
+                # Assign
+                for n in v:
+                    if s0[n].lower() == 'normal':
+                        ix = v.index(n) - (len(v) - to_be_samp)
+                        zvec[n] = ran[ix]
+                    # If there are no other nodes than the initial node are infected 
+            else:
+                # Initialize
+                zvec = copy.copy(zvec0)
                 # Calculate P(data | z, attacker) and P(z | attacker)
-                prob_no_att = prob_model_no_attacker(SFTnet, data, net)
-                # Add the probability to samples
-                samples.append(prob_no_att)
-
-        # Number of infected nodes in the ordering.
+                # given data.
+            probs = prob_model_given_data(SFTnet,data,zvec,T,logn_fact)
+            pz_a = np.exp(probs[0]); pd_za = np.exp( probs[1])
+            # Combine them to get P(data | attacker)
+            pd_a = pd_za * pz_a
+            # Add the probability to samples
+            samples.append(pd_a)
+            # If no node is infected at all time, corresponding to no attacker case.
+            # Number of infected nodes in the ordering.
         m = len(v)
         # Normalizing constant.
         nc = T**m / factorial(m)
         # Average up the samples for this v.
-        av = np.log(np.mean(np.exp(np.asarray(samples))) * nc)
+        av = np.log(np.mean(np.asarray(samples)) * nc)
         # Add this average number to "averages".
         averages.append(av)
 
@@ -141,5 +132,5 @@ state0 = dict(A = 'infected',
 			  D = 'normal'
 			 )
 data = gen_data(T,net,state0)
-lhood = uniform_samp(net, state0, 5, T, data)
+lhood = uniform_samp(net, state0, 10, T, data)
 print lhood
