@@ -170,6 +170,11 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
     prob_exact_times = 0
     time_minus_1 = 0
     for node, time in sorted_infect[1:]:
+        ### Here we need to control for the fact that we only
+        ### care about the ordering if the nodes that do
+        ### get infected since we are taking as *given* some
+        ### nodes do not get infected when summing over DAGS
+        ### The p exact time is ok
         infect_ix = SFTNet.node_names.index(node)
         # The index of the node that gets infected
         cross_S_ix = SFTNet.cross_S.index(state)
@@ -226,7 +231,7 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
                     rate * T)
             prob_no_infect_data += prob_msgs
 
-    prob_data = 0
+    prob_data = prob_no_infect_data
     for node, time in sorted_infect:
         # For each node.  node is the node name, not the instance
         _node_inst = SFTNet.node_dict[node]

@@ -60,7 +60,6 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
             # code it in a general way for a possible later extension that
             # multiple nodes can be infected at 0.
             # Initialize the vector of infection times
-            times = [-1] * len(v)
             # Zip into a dict
             zvec0 = dict(zip(v, [0]*len(v)))
             # Number of nodes to be sampled. Initialize it as the length of 
@@ -101,23 +100,23 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
                 # Calculate P(data | z, attacker) and P(z | attacker)
                 # given data.
             probs = prob_model_given_data(SFTnet,data,zvec,T,logn_fact)
-            pz_a = np.exp(probs[0]); pd_za = np.exp( probs[1])
+            pz_a = probs[0]; pd_za = probs[1]
             # Combine them to get P(data | attacker)
-            pd_a = pd_za * pz_a
+            pd_a = pd_za + pz_a
             # Add the probability to samples
             samples.append(pd_a)
             # If no node is infected at all time, corresponding to no attacker case.
             # Number of infected nodes in the ordering.
-        m = len(v)
+        m = len(v)-1
         # Normalizing constant.
-        nc = T**m / factorial(m)
-        # Average up the samples for this v.
-        av = np.log(np.mean(np.asarray(samples)) * nc)
+        nc = T ** m / factorial(m)
+        # Average up the samples for thisv.
+        av = np.mean(np.exp(samples)) * nc
         # Add this average number to "averages".
         averages.append(av)
 
     # Sum up all of the averages for each v
-    lhood = np.sum(averages)
+    lhood = np.log(np.sum(averages))
 
     return lhood
 
@@ -132,5 +131,5 @@ state0 = dict(A = 'infected',
 			  D = 'normal'
 			 )
 data = gen_data(T,net,state0)
-lhood = uniform_samp(net, state0, 10, T, data)
+lhood = uniform_samp(net, state0, 1000, T, data)
 print lhood
