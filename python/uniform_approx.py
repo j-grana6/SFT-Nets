@@ -121,15 +121,16 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
     return lhood
 
 
-# Test the uniform_samp()
-from testing_net import *
+if __name__ =='main':
+    # Test the uniform_samp()
+    from testing_net import *
 
-# Initial net state
-state0 = dict(A = 'infected',
+    # Initial net state
+    state0 = dict(A = 'infected',
 			  B = 'normal',
 			  C = 'normal',
 			  D = 'normal'
 			 )
-data = gen_data(T,net,state0)
-lhood = uniform_samp(net, state0, 1000, T, data)
-print lhood
+    data = gen_data(T,net,state0)
+    lhood = uniform_samp(net, state0, 1000, T, data)
+    print lhood

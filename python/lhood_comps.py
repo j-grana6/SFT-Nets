@@ -7,7 +7,7 @@ from results import Results
 import random
 from orderings import gen_orderings
 
-def MCMC_MH(SFTNet, data, N, z0, T, orderings,  attackers, alpha = .05, uniform = True):
+def MCMC_MH(SFTNet, data, N, z0, T, orderings,  attackers, alpha = .05, uniform = True, print_jumps=False):
     #  TODO Need to profile this
     #  TODO: Need to make this more general.  Not trivial
     #  TODO : Add sample from possible node orderings
@@ -64,9 +64,10 @@ def MCMC_MH(SFTNet, data, N, z0, T, orderings,  attackers, alpha = .05, uniform 
         z1.update(dict(zip(attackers, [0]*len(attackers))))
         p1 = prob_mod(z1)
         if (p1[0] - p0[0] > np.log(np.random.random())):
+            if print_jumps :
                 print 'A Jump at, ', n, 'to ', z1, 'with prob', p1, '\n'
-                p0 = p1
-                z0 = z1
+            p0 = p1
+            z0 = z1
         for key, val in z0.iteritems():
             time_samples[key].append(val)
         probs.append(p0)

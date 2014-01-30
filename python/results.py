@@ -49,16 +49,8 @@ class Results(object):
         """
         Calculates the log likelihood
         """
-        if not self.metropolis:
-            ## If it was simple Monte Carlo
-            probs = self.log_pz + self.log_pdata
-            ## Prob of the product
-            log_likelihood = np.log(np.mean(np.exp(probs)))
-            # Need to exponentiate, then take the mean and then take
-            # the log.  Can't just take the mean of the log probs
-        else:
-            probs = self.log_pdata[burnin:]
-            log_likelihood = np.log(np.mean(np.exp(probs)))
+        probs = self.log_pdata[burnin:]
+        log_likelihood = np.log(np.mean(np.exp(probs)))
         return log_likelihood
 
     def plot_convergence(self):

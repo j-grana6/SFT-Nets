@@ -10,7 +10,7 @@ import os
 import copy
 import itertools
 
-def go(net, T, t0, mcmc_samples):
+def MH_to_infty(net, T, t0, mcmc_samples, data):
     """
     Does an entire simulation.  I.e. generates data, picks starting params
     does the mcmc and returns a result
@@ -31,7 +31,6 @@ def go(net, T, t0, mcmc_samples):
         How many mcmc samples to run
 
     """
-    data = gen_data(T, net, t0)
     # Generate artificial data
     # lp = -np.inf
     # This loop picks starting values for the MCMC
@@ -71,7 +70,9 @@ if __name__ == '__main__':
     likelihoods = []
     no_attacker = []
     for i in range(1):
-        a= go(net, 10000, { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'}, 60000 )
+        t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'}
+        data = gen_data(T, net, t0)
+        a= MH_to_infty(net, 10000, t0, 60000, data )
         likelihoods.append(a.calc_log_likelihood())
         no_attacker.append(a.p_no_attacker)
         for (key, value) in a.true_times.iteritems():
