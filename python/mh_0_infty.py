@@ -43,7 +43,7 @@ def MH_to_infty(net, T, t0, mcmc_samples, data):
     nodes_to_change = [nd for nd in net.node_names if t0[nd] == 'normal']
     nodes_no_change = [nd for nd in net.node_names if t0[nd] == 'infected']
     no_change_dict = dict(zip(nodes_no_change, [0]*len(nodes_no_change)))
-    start_loop = itertools.permutations(range(1, 2*T, 1000), len(nodes_to_change))
+    start_loop = itertools.permutations(range(1, 2*T, 250), len(nodes_to_change))
     while True:
         try :
             totry = start_loop.next()

@@ -20,3 +20,10 @@ D = SFT('D', ['normal', 'infected'], [], {}, [], 'internal')
 T=10000
 nodes = [A, B, C, D]
 net = SFTNet(nodes)
+
+A2 = SFT('A', ['normal', 'infected'], ['B', 'C'],
+      {'B':np.array([[1, 0], [4, 1/10000.]]),
+       'C': np.array([[1,0], [4,1/10000.]])},
+       ['clean', 'malicious'], 'external')
+nodes = [A2, B, C,D]
+net2 = SFTNet(nodes)
