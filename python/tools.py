@@ -170,6 +170,8 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
     prob_exact_times = 0
     time_minus_1 = 0
     for node, time in sorted_infect[1:]:
+        # TODO IMPORTANT.  Generalize to be able to specify intial
+        # infected node.  
         ### Here we need to control for the fact that we only
         ### care about the ordering if the nodes that do
         ### get infected since we are taking as *given* some

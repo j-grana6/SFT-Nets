@@ -4,8 +4,8 @@ from mh_0_infty import *
 
 def go(SFTNet, T, s0, uniform_sample_size, Mh_steps):
     data = gen_data(T, SFTNet, s0)
+    mh_res = MH_to_infty(SFTNet, T, s0, Mh_steps, data, print_jumps=True)
     uni_res = uniform_samp(SFTNet, s0, uniform_sample_size, T, data)
-    mh_res = MH_to_infty(SFTNet, T, s0, Mh_steps, data)
     return uni_res, mh_res, data
 
 if __name__ == '__main__':
@@ -17,10 +17,10 @@ if __name__ == '__main__':
     times = []
     truep = []
     for i in range(30):
-        res = go(net, 10000, t0, 20000, 1000000)
+        res = go(net, 10000, t0, 10000, 100000)
         mh_res.append(res[1])
         uni.append(res[0])
-        mh_time = res[1].calc_log_likelihood(burnin=100000)
+        mh_time = res[1].calc_log_likelihood(burnin=10000)
         mh_t.append(mh_time)
         diffs.append(res[0] - mh_time)
         times.append(res[2][-1])

@@ -10,7 +10,7 @@ import os
 import copy
 import itertools
 
-def MH_to_infty(net, T, t0, mcmc_samples, data):
+def MH_to_infty(net, T, t0, mcmc_samples, data, print_jumps=False):
     """
     Does an entire simulation.  I.e. generates data, picks starting params
     does the mcmc and returns a result
@@ -59,7 +59,7 @@ def MH_to_infty(net, T, t0, mcmc_samples, data):
     #monte_carlo_samples = 30000
     prob_no_attacker = prob_model_no_attacker(net, data, T)
     prob_true_value = prob_model_given_data(net, data, data[-1], T, logn_fact)
-    mcmc = MCMC_MH(net, data, mcmc_samples, guess_times, T, orderings, nodes_no_change)
+    mcmc = MCMC_MH(net, data, mcmc_samples, guess_times, T, orderings, nodes_no_change, print_jumps=print_jumps)
 
     mcmc_results = Results(mcmc, data[-1], prob_no_attacker,
                            prob_true_value, data, metropolis = True)

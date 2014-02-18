@@ -55,12 +55,11 @@ def MCMC_MH(SFTNet, data, N, z0, T, orderings,  attackers, alpha = .05, uniform 
     probs = []
     # container for probabilities
     num_internal = len(SFTNet.internals)
-    order = orderings[0]
     while n < N:
-        if np.random.random() < alpha:
-            order = random.sample(orderings, 1)[0]
-        z1 = dict(zip(order, np.sort((np.asarray(z0.values()) +
-                        np.random.normal(size=numnodes)*100))))
+        #if np.random.random() < alpha:
+        #    order = random.sample(orderings, 1)[0]
+        z1 = dict(zip(z0.keys(), (np.asarray(z0.values()) +
+                        np.random.normal(size=numnodes) *2)))
         z1.update(dict(zip(attackers, [0]*len(attackers))))
         p1 = prob_mod(z1)
         if (p1[0] - p0[0] > np.log(np.random.random())):
