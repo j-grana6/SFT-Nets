@@ -2,30 +2,34 @@ from testing_net import *
 from uniform_approx import *
 from mh_0_infty import *
 
+
 def go(SFTNet, T, s0, uniform_sample_size, Mh_steps):
     data = gen_data(T, SFTNet, s0)
-    mh_res = MH_to_infty(SFTNet, T, s0, Mh_steps, data, print_jumps=True)
+    mh_res = MH_to_infty(SFTNet, T, s0, Mh_steps, data, print_jumps=False)
     uni_res = uniform_samp(SFTNet, s0, uniform_sample_size, T, data)
     return uni_res, mh_res, data
 
 if __name__ == '__main__':
+    reps = 10
     t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'}
     mh_t = []
     mh_res = []
     uni = []
+    uni_times = []
     diffs=[]
     times = []
     truep = []
-    for i in range(30):
-        res = go(net, 10000, t0, 10000, 100000)
+    for i in range(reps):
+        res = go(net, 10000, t0, 25000, 500000)
         mh_res.append(res[1])
         uni.append(res[0])
-        mh_time = res[1].calc_log_likelihood(burnin=10000)
+        uni_times.append(res[0][0])
+        mh_time = res[1].calc_log_likelihood(burnin=0)
         mh_t.append(mh_time)
-        diffs.append(res[0] - mh_time)
+        diffs.append(res[0][0] - mh_time)
         times.append(res[2][-1])
         truep.append(res[1].p_true_vals)
-        print mh_time -res[0]
+        print mh_time -res[0][0]
 
 from matplotlib import pyplot as plt
 b_times = [time['B'] for time in times]
@@ -62,7 +66,7 @@ ax1.set_ylabel('Difference in Estimation')
 ax1.set_xlabel('Probability no Attacker')
 ax1.set_title(' Estimation Difference against P(d|no attacker)')
 
-ax2.scatter(p_no_attacker, uni)
+ax2.scatter(p_no_attacker, uni_times)
 ax2.set_ylabel('P(data|attacker')
 ax2.set_xlabel('P(data | no attacker)')
 ax2.plot(np.arange(-200, 0,1), np.arange(-200,0,1))
@@ -76,3 +80,60 @@ ax3.set_title('MH vs no attacker')
 fig.tight_layout()
 
 fig.savefig(num+'against_no_attacker.png')
+
+from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib import rc
+rc('mathtext', default='regular')
+pdf_doc = PdfPages('convergence.pdf')
+burn =50000
+#plt.tight_layout()
+for r in range(reps):
+    mh_conv = mh_res[r].plot_convergence()
+    mh_w_burnin = np.log(np.cumsum(np.exp(mh_res[r].log_pdata[burn:]))/np.arange(len(mh_res[r].log_pdata[burn:])))
+    unif_samps = np.exp(np.asarray(uni[r][1]))
+    (num_configs, samps_per) = unif_samps.shape
+    ncs = np.asarray(uni[r][2]).reshape(num_configs, 1)
+    unif_samps = unif_samps * ncs
+    unif_samps = np.cumsum(unif_samps, axis=1)
+    unif_samps = unif_samps / np.arange(1, samps_per +1, 1)
+    uni_ma = np.log(np.sum(unif_samps, axis=0))
+    tt= times[r]
+    true_txt = 'True infection times are ' +'A:' +str(tt['A']) +\
+      ', B: ' + str(tt['B']) + ', C: ' +str(tt['C']) + \
+      ', D: ' + str(tt['D'])
+    x_axis_unif = np.arange(num_configs, num_configs *
+                            (samps_per +1), num_configs)
+    fig, (ax12, ax11) = plt.subplots(2,1)
+    p1 = ax11.plot(np.arange(len(mh_conv)) , mh_conv, label ='MH')
+    ax11.set_xlabel('Metropolis Samples')
+    ax11.set_ylabel('Running Likelihood')
+    p2 = ax11.plot(np.arange(len(mh_w_burnin)), mh_w_burnin, label = 'w/ burn')
+    ax11.set_position([.05,.05,.7, .35])
+    ax22 = ax11.twiny()
+    p3 = ax22.plot(x_axis_unif, uni_ma, label ='Uni', color='red')
+    ax22.set_xlabel('Uniform Sample')
+    ax22.set_position([.05,.05,.7,.35])
+    ax11.legend(p1+ p2+ p3, ['MH', '50kburnin', 'uni'], loc='center left', bbox_to_anchor = (1, .75))
+    fig.suptitle(true_txt)
+    n1 = ax12.plot(mh_res[r].res['B'], label='B')
+    n2 = ax12.plot(mh_res[r].res['C'], label='C')
+    n3 =ax12.plot(mh_res[r].res['D'], label='D')
+    ax12.legend(n1+n2+n3, ['B', 'C', 'D'], loc = 'upper center', fancybox=True, ncol=3, bbox_to_anchor=(.5, 1.15))
+    ax12.set_position([.1, .5, .35, .35])
+    for tick in ax12.xaxis.get_major_ticks():
+        tick.label.set_fontsize(6)
+    axfin = fig.add_axes([.5, .5, .45, .35])
+    f1 = axfin.plot(mh_res[r].res['P(data | z, attacker)'], label = 'P(data)')
+    f2 = axfin.plot(mh_res[r].res['P(z | attacker)'], label = 'P(z)')
+    axfin.legend(f1+f2, ['P(data)', 'P(z)'], loc='lower center', prop={'size':10}, bbox_to_anchor = (1, .75))
+    pdf_doc.savefig(fig)
+    plt.close(fig)
+pdf_doc.close()
+
+
+
+
+
+    
+
+    

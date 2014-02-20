@@ -47,7 +47,9 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
     # Create a set V of all possible node orderings.
     V = gen_orderings(SFTnet, s0)
     # Initialize the list to store the averages for each ordering, v
+    samp_col = []
     averages = []
+    ncs = []
     # For every possible ordering
     for v in V:
         # Initialize the sample
@@ -112,13 +114,14 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
         nc = T ** m / factorial(m)
         # Average up the samples for thisv.
         av = np.mean(np.exp(samples)) * nc
+        ncs.append(nc)
         # Add this average number to "averages".
         averages.append(av)
-
+        samp_col.append(samples)
     # Sum up all of the averages for each v
     lhood = np.log(np.sum(averages))
 
-    return lhood
+    return lhood, samp_col, ncs
 
 
 if __name__ =='main':

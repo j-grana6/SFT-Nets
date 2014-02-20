@@ -43,7 +43,7 @@ def MH_to_infty(net, T, t0, mcmc_samples, data, print_jumps=False):
     nodes_to_change = [nd for nd in net.node_names if t0[nd] == 'normal']
     nodes_no_change = [nd for nd in net.node_names if t0[nd] == 'infected']
     no_change_dict = dict(zip(nodes_no_change, [0]*len(nodes_no_change)))
-    start_loop = itertools.permutations(range(1, 2*T, 250), len(nodes_to_change))
+    start_loop = itertools.permutations(range(1, 2*T, 500), len(nodes_to_change))
     while True:
         try :
             totry = start_loop.next()
@@ -59,6 +59,8 @@ def MH_to_infty(net, T, t0, mcmc_samples, data, print_jumps=False):
     #monte_carlo_samples = 30000
     prob_no_attacker = prob_model_no_attacker(net, data, T)
     prob_true_value = prob_model_given_data(net, data, data[-1], T, logn_fact)
+    guess_times = dict(zip(['B', 'C', 'D'], np.sort(np.random.random(size=3)*10000)))
+    guess_times['A']=0
     mcmc = MCMC_MH(net, data, mcmc_samples, guess_times, T, orderings, nodes_no_change, print_jumps=print_jumps)
 
     mcmc_results = Results(mcmc, data[-1], prob_no_attacker,
