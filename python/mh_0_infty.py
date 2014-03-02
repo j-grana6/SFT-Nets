@@ -10,74 +10,58 @@ import os
 import copy
 import itertools
 
-def MH_to_infty(net, T, t0, mcmc_samples, data, print_jumps=False):
-    """
-    Does an entire simulation.  I.e. generates data, picks starting params
-    does the mcmc and returns a result
+# This setup function is no longer necessary
+# I didn't delete the module because we might want
+# to pull the plotting stuff from the bottom
 
-    Parameters
-    ----------
+ 
+# def MH_to_infty(net, T, t0, mcmc_samples, data, print_jumps=False):
+#     """
+#     Does an entire simulation.  I.e. generates data, picks starting params
+#     does the mcmc and returns a result
 
-    net : SFTNet
-        An SFTNet
+#     Parameters
+#     ----------
 
-    T : int
-        Length of observation Period
+#     net : SFTNet
+#         An SFTNet
 
-    t0 : Initial state of the net
-        Dict.  Keys are node names, values are either 'clean' or 'infected'
+#     T : int
+#         Length of observation Period
 
-    mcmc_samples : int
-        How many mcmc samples to run
+#     t0 : Initial state of the net
+#         Dict.  Keys are node names, values are either 'clean' or 'infected'
 
-    """
-    # Generate artificial data
-    # lp = -np.inf
-    # This loop picks starting values for the MCMC
-    # It loops though possible values of B and C by 250
-    # and sets D 'close' to the minimum of the two
-    logn_fact = gen_logn_fact(data)
-    orderings = gen_orderings(net, t0)
-    orderings = [order for order in orderings if len(order) ==4]
-    lp = -np.inf
-    nodes_to_change = [nd for nd in net.node_names if t0[nd] == 'normal']
-    nodes_no_change = [nd for nd in net.node_names if t0[nd] == 'infected']
-    no_change_dict = dict(zip(nodes_no_change, [0]*len(nodes_no_change)))
-    start_loop = itertools.permutations(range(1, 2*T, 500), len(nodes_to_change))
-    # while True:
-    #     try :
-    #         totry = start_loop.next()
-    #         totry = list(np.asarray(totry) + np.random.random(size=len(totry)))
-    #         s0 =  dict(zip(nodes_to_change, totry))
-    #         s0.update(no_change_dict)
-    #         newprob = sum(prob_model_given_data(net, data, s0, 10000, logn_fact))
-    #         if newprob > lp:
-    #             lp = newprob
-    #             guess_times = s0
-    #     except StopIteration:
-    #         break
-    #monte_carlo_samples = 30000
-    prob_no_attacker = prob_model_no_attacker(net, data, T)
-    prob_true_value = prob_model_given_data(net, data, data[-1], T, logn_fact)
-    guess_times = dict(zip(['B', 'C', 'D'], np.sort(np.random.random(size=3)*10000)))
-    guess_times['A']=0
-    mcmc = MCMC_MH(net, data, mcmc_samples, guess_times, T, orderings, nodes_no_change, print_jumps=print_jumps)
-    mcmc_results = Results(mcmc, data[-1], prob_no_attacker,
-                           prob_true_value, data, metropolis = True)
-    return mcmc_results
+#     mcmc_samples : int
+#         How many mcmc samples to run
 
-if __name__ == '__main__':
-    true_times = defaultdict(list)
-    likelihoods = []
-    no_attacker = []
-    for i in range(1):
-        t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'}
-        data = gen_data(T, net, t0)
-        a= MH_to_infty(net, 10000, t0, 60000, data )
-        likelihoods.append(a.calc_log_likelihood())
-        no_attacker.append(a.p_no_attacker)
-        for (key, value) in a.true_times.iteritems():
-            true_times[key].append(value)
+#     """
+#     # Generate artificial data
+#     # lp = -np.inf
+#     # This loop picks starting values for the MCMC
+#     # It loops though possible values of B and C by 250
+#     # and sets D 'close' to the minimum of the two
+#     # logn_fact = gen_logn_fact(data)
+#     # orderings = gen_orderings(net, t0)
+#     # orderings = [order for order in orderings if len(order) ==4]
+    
+    
+#     # mcmc = MCMC_MH(net, data, mcmc_samples, guess_times, T, orderings, nodes_no_change, print_jumps=print_jumps)
+    
+#     # return mcmc_results
+
+# if __name__ == '__main__':
+#     true_times = defaultdict(list)
+#     likelihoods = []
+#     no_attacker = []
+#     for i in range(1):
+#         t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'}
+#         data = gen_data(T, net, t0)
+#         a= MH_to_infty(net, 10000, t0, 60000, data )
+#         likelihoods.append(a.calc_log_likelihood())
+#         no_attacker.append(a.p_no_attacker)
+#         for (key, value) in a.true_times.iteritems():
+#             true_times[key].append(value)
 
 
 def plot_diffs():

@@ -1,16 +1,16 @@
 from testing_net import *
 from uniform_approx import *
-from mh_0_infty import *
-
+#from mh_0_infty import *
+from lhood_comps import MCMC_MH
 
 def go(SFTNet, T, s0, uniform_sample_size, Mh_steps):
     data = gen_data(T, SFTNet, s0)
-    mh_res = MH_to_infty(SFTNet, T, s0, Mh_steps, data, print_jumps=False)
+    mh_res = MCMC_MH(SFTNet, data, s0, Mh_steps, T, print_jumps=True)
     uni_res = uniform_samp(SFTNet, s0, uniform_sample_size, T, data)
     return uni_res, mh_res, data
 
 if __name__ == '__main__':
-    reps = 2
+    reps = 1
     t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'}
     mh_t = []
     mh_res = []
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     times = []
     truep = []
     for i in range(reps):
-        res = go(net, 10000, t0, 25000, 500000)
+        res = go(net, 10000, t0, 10000, 1000000)
         mh_res.append(res[1])
         uni.append(res[0])
         uni_times.append(res[0][0])
@@ -30,6 +30,10 @@ if __name__ == '__main__':
         times.append(res[2][-1])
         truep.append(res[1].p_true_vals)
         print mh_time -res[0][0]
+        print '================'
+        print res[1].calc_log_likelihood(burnin=50000) - res[0][0]
+        print '================'
+        print res[1].calc_log_likelihood(burnin=100000) - res[0][0]
 
     from matplotlib import pyplot as plt
     b_times = [time['B'] for time in times]
@@ -117,7 +121,7 @@ if __name__ == '__main__':
         fig.suptitle(true_txt)
         n1 = ax12.plot(mh_res[r].res['B'], label='B')
         n2 = ax12.plot(mh_res[r].res['C'], label='C')
-        n3 =ax12.plot(mh_res[r].res['D'], label='D')
+        n3 = ax12.plot(mh_res[r].res['D'], label='D')
         ax12.legend(n1+n2+n3, ['B', 'C', 'D'], loc = 'upper center', fancybox=True, ncol=3, bbox_to_anchor=(.5, 1.15))
         ax12.set_position([.1, .5, .35, .35])
         for tick in ax12.xaxis.get_major_ticks():

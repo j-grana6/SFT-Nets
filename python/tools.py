@@ -313,6 +313,7 @@ def prob_model_no_attacker(SFTnet, data, T):
             normal_ix = node.states.index('normal')
             clean_ix = node.messages.index('clean')
             rate = node.rates[rec][normal_ix, clean_ix]
+            print rate
             num_sent = np.sum((data[2] == node.name) * (data[3] == rec))
             logprob = -rate * T + num_sent * (np.log(rate * T))  \
                 - np.sum(np.log(np.arange(1, num_sent + 1, 1)))
