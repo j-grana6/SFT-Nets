@@ -64,7 +64,7 @@ def MCMC_MH(SFTNet, data, s0, N,  T, print_jumps=False):
         #if np.random.random() < alpha:
         #    order = random.sample(orderings, 1)[0]
         for nd in nodes_to_change:
-            z1[nd] = z0[nd] + np.random.normal() * 500
+            z1[nd] = z0[nd] + np.random.normal() * 2000
         p1 = prob_mod(z1)
         if (p1[0] - p0[0] > np.log(np.random.random())):
             if print_jumps :

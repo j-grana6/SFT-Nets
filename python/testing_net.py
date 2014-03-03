@@ -3,7 +3,7 @@ from sft_net import *
 
 A = SFT('A', ['normal', 'infected'], ['B', 'C'],
       {'B':np.array([[1, 0], [1, 1/10000.]]),
-       'C': np.array([[1, 0], [1,1/10000.]])},
+       'C': np.array([[1, 0], [1, 1/10000.]])},
        ['clean', 'malicious'], 'external')
 
 B = SFT('B', ['normal', 'infected'], ['C', 'D'],
@@ -21,9 +21,12 @@ T=10000
 nodes = [A, B, C, D]
 net = SFTNet(nodes)
 
-A2 = SFT('A', ['normal', 'infected'], ['B', 'C'],
-      {'B':np.array([[1, 0], [4, 1/10000.]]),
-       'C': np.array([[1,0], [4,1/10000.]])},
+A_clean = SFT('A', ['normal', 'infected'], ['B', 'C'],
+      {'B':np.array([[1, 0], [1,  0]]),
+       'C': np.array([[1, 0], [1, 0]])},
        ['clean', 'malicious'], 'external')
-nodes = [A2, B, C,D]
-net2 = SFTNet(nodes)
+
+
+nodes_clean = [A_clean, B, C, D]
+net_clean = SFTNet(nodes_clean)
+

@@ -4,13 +4,13 @@ from uniform_approx import *
 from lhood_comps import MCMC_MH
 
 def go(SFTNet, T, s0, uniform_sample_size, Mh_steps):
-    data = gen_data(T, SFTNet, s0)
+    data = gen_data(T, net_clean, s0)
     mh_res = MCMC_MH(SFTNet, data, s0, Mh_steps, T, print_jumps=True)
     uni_res = uniform_samp(SFTNet, s0, uniform_sample_size, T, data)
     return uni_res, mh_res, data
 
 if __name__ == '__main__':
-    reps = 1
+    reps = 5
     t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'}
     mh_t = []
     mh_res = []
