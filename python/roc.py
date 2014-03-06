@@ -4,7 +4,7 @@ from lhood_comps import MCMC_MH
 from tools import gen_data, prob_model_no_attacker 
 import numpy as np
 
-def get_roc_coords(seed, num_pos, num_neg, i_net, c_net,
+def get_roc_coords(seed, num_pos, num_neg, i_net,
                    s0 = {'A': 'infected', 'B' : 'normal', 'C': 'normal', 'D': 'normal'},
                    T=100000, uni_samp_size = 20000):
     """
@@ -37,16 +37,17 @@ def get_roc_coords(seed, num_pos, num_neg, i_net, c_net,
     for i in range(num_pos):
         print  'i = ', i
         data = gen_data(T, i_net, s0)
-        uni_res = uniform_samp(i_net, s0, uni_samp_size, T ,data)
+        mh_res = MCMC_MH(i_net, data, s0, 500000, T , print_jumps=False)
         p_no_attacker = prob_model_no_attacker(i_net, data, T)
-        infected_lhoods.append((uni_res[0], p_no_attacker))
+        # infected_lhoods.append((uni_res[0], p_no_attacker))
+        infected_lhoods.append((mh_res.calc_log_likelihood(burnin=50000), p_no_attacker))
     for j in range(num_neg):
         print 'j =', j
-        data = gen_data(T, c_net, dict(zip(c_net.node_names, ['normal'] * len(c_net.nodes))))
-        uni_res = uniform_samp(i_net, s0, uni_samp_size, T, data)
+        data = gen_data(T, i_net, dict(zip(i_net.node_names, ['normal'] * len(i_net.nodes))))
+        mh_res = MCMC_MH(i_net, data, s0, 500000, T, print_jumps=False)
         p_no_attacker = prob_model_no_attacker(i_net, data, T)
-        clean_lhoods.append((uni_res[0], p_no_attacker))
-
+        #clean_lhoods.append((uni_res[0], p_no_attacker))
+        clean_lhoods.append((mh_res.calc_log_likelihood(burnin=50000), p_no_attacker))
     return infected_lhoods, clean_lhoods
     
 
@@ -99,7 +100,7 @@ def plot_anomaly_roc(infect_res, clean_res, lhood_step):
 
 if __name__ == '__main__':
     def f(seed):
-        return get_roc_coords(seed, 25, 25, net, net_clean)
+        return get_roc_coords(seed, 10, 10, net)
 
     from multiprocessing import Pool
     P = Pool(4)

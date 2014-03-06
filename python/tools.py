@@ -41,7 +41,9 @@ def gen_data(T, SFTNet, t0):
     t = 0
     # initialize start time
     infect_times = dict(zip([x.name for x in SFTNet.nodes], [T]*n_nodes))
-    infect_times['A'] = 0
+    for key, val in t0.iteritems():
+        if val == 'infected':
+            infect_times[key] = 0
     state = s0
     for s in range(len(state)):
         SFTNet.nodes[s].state = state[s]

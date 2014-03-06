@@ -1,17 +1,18 @@
-from testing_net import *
+from biggernet import *
 from uniform_approx import *
 #from mh_0_infty import *
 from lhood_comps import MCMC_MH
 
 def go(SFTNet, T, s0, uniform_sample_size, Mh_steps):
-    data = gen_data(T, net_clean, s0)
-    mh_res = MCMC_MH(SFTNet, data, s0, Mh_steps, T, print_jumps=True)
+    data = gen_data(T, net, s0)
+    print data[-1]
+    mh_res = MCMC_MH(SFTNet, data, s0, Mh_steps, T, proposal_var=1000, print_jumps=False)
     uni_res = uniform_samp(SFTNet, s0, uniform_sample_size, T, data)
     return uni_res, mh_res, data
 
 if __name__ == '__main__':
-    reps = 5
-    t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'}
+    reps = 1
+    t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal', 'E': 'normal', 'F': 'infected'}
     mh_t = []
     mh_res = []
     uni = []
@@ -20,7 +21,7 @@ if __name__ == '__main__':
     times = []
     truep = []
     for i in range(reps):
-        res = go(net, 10000, t0, 10000, 1000000)
+        res = go(net, 1000, t0, 2000, 1000000)
         mh_res.append(res[1])
         uni.append(res[0])
         uni_times.append(res[0][0])
@@ -31,10 +32,9 @@ if __name__ == '__main__':
         truep.append(res[1].p_true_vals)
         print mh_time -res[0][0]
         print '================'
-        print res[1].calc_log_likelihood(burnin=50000) - res[0][0]
-        print '================'
-        print res[1].calc_log_likelihood(burnin=100000) - res[0][0]
-
+        # print res[1].calc_log_likelihood(burnin=50000) - res[0][0]
+        # print '================'
+        # print res[1].calc_log_likelihood(burnin=100000) - res[0][0]
     from matplotlib import pyplot as plt
     b_times = [time['B'] for time in times]
     c_times = [time['C'] for time in times]
