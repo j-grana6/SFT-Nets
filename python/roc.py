@@ -6,7 +6,7 @@ import numpy as np
 
 def get_roc_coords(seed, num_pos, num_neg, i_net,
                    s0 = {'A': 'infected', 'B' : 'normal', 'C': 'normal', 'D': 'normal'},
-                   T=100000, uni_samp_size = 20000):
+                   T=1000, uni_samp_size = 20000):
     """
     num_pos : int
         Number pf infected nets in the sample
@@ -111,9 +111,9 @@ if __name__ == '__main__':
         pos.append(res[i][0])
         neg.append(res[i][1])
     pos = np.asarray(pos)
-    pos = pos.reshape(100,2)
+    pos = pos.reshape(40,2)
     neg = np.asarray(neg)
-    neg = neg.reshape(100,2)
+    neg = neg.reshape(40,2)
 
     
     our_res = np.asarray(plot_our_roc(pos, neg, .5))

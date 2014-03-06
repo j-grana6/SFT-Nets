@@ -152,7 +152,7 @@ def gen_orderings(SFTnet,s0):
                 ends[len(order)].append(order[numattackers:])
         
         
-    return newneworderings, ends
+    return newneworderings
 
 
 # Test the gen_orderings function.
