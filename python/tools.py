@@ -2,7 +2,7 @@ import numpy as np
 import copy
 import operator
 from scipy.stats import poisson, norm
-
+import pandas as pd
 
 def gen_data(T, SFTNet, t0):
     """
@@ -162,6 +162,8 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
     # First order the infections
     sorted_infect = sorted(infect_times.iteritems(),
                            key=operator.itemgetter(1))
+    if min(infect_times.values()) < 0:
+        return [-np.inf, - np.inf]
     not_infected = [nd for nd in SFTNet.node_names \
                     if nd not in infect_times.keys()]
     # Creates a list of tuples and then sorts by the value
@@ -405,3 +407,29 @@ def rhs_integral(SFTNet, data, T):
 def gen_logn_fact(data):
     return np.hstack((np.zeros(1), np.cumsum(np.log(np.arange(1, len(data[0])+2,1)))))
 
+
+def gen_trans_frame(net):
+    import pandas as pandas
+    ix1 = []
+    for node in net.node_names:
+        ix1.extend([node]*len(net.node_names))
+    ix2 = net.node_names * len(net.node_names)
+    ix1 = np.asarray(ix1)
+    ix2 = np.asarray(ix2)
+    ix = pandas.MultiIndex.from_arrays([ix1, ix2],names= ['sender', 'receiver'])
+    df = pandas.DataFrame(np.zeros(shape=(len(ix1), 3)),
+                          columns = ['normal-clean rate', 'infected-clean rate', 'infected-malicious rate'],index=ix)
+    for i in range(len(net.nodes)):
+        nd = net.nodes[i]
+        normstate_ix = nd.states.index('normal')
+        infstate_ix = nd.states.index('infected')
+        try :
+            cleanmsg_ix = nd.messages.index('clean')
+            malmsg_ix = nd.messages.index('malicious')
+        except Exception:
+            print 'Doesn\'t send'
+        for o_node in nd.sends_to:
+            df.set_value((nd.name, o_node), 'normal-clean rate', nd.rates[o_node][normstate_ix, cleanmsg_ix])
+            df.set_value((nd.name, o_node), 'infected-clean rate', nd.rates[o_node][infstate_ix, cleanmsg_ix])
+            df.set_value((nd.name, o_node), 'infected-malicious rate', nd.rates[o_node][infstate_ix, malmsg_ix])
+    return df

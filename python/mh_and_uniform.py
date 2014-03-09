@@ -1,8 +1,10 @@
-from biggernet import *
+from biggernet import net as bignet
+from testing_net import net as brian_net
 from uniform_approx import *
 #from mh_0_infty import *
 from lhood_comps import MCMC_MH
 
+net =brian_net
 def go(SFTNet, T, s0, uniform_sample_size, Mh_steps):
     data = gen_data(T, net, s0)
     print data[-1]
@@ -12,7 +14,8 @@ def go(SFTNet, T, s0, uniform_sample_size, Mh_steps):
 
 if __name__ == '__main__':
     reps = 1
-    t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal', 'E': 'normal', 'F': 'infected'}
+    #t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal', 'E': 'normal', 'F': 'infected'}
+    t0 = {'A': 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'}
     mh_t = []
     mh_res = []
     uni = []
@@ -21,7 +24,7 @@ if __name__ == '__main__':
     times = []
     truep = []
     for i in range(reps):
-        res = go(net, 1000, t0, 2000, 1000000)
+        res = go(net, 10000, t0, 2000, 500000)
         mh_res.append(res[1])
         uni.append(res[0])
         uni_times.append(res[0][0])
@@ -122,7 +125,8 @@ if __name__ == '__main__':
         n1 = ax12.plot(mh_res[r].res['B'], label='B')
         n2 = ax12.plot(mh_res[r].res['C'], label='C')
         n3 = ax12.plot(mh_res[r].res['D'], label='D')
-        ax12.legend(n1+n2+n3, ['B', 'C', 'D'], loc = 'upper center', fancybox=True, ncol=3, bbox_to_anchor=(.5, 1.15))
+        n4 = ax12.plot(mh_res[r].res['E'], label='E')
+        ax12.legend(n1+n2+n3+n4, ['B', 'C', 'D','E'], loc = 'upper center', fancybox=True, ncol=3, bbox_to_anchor=(.5, 1.15))
         ax12.set_position([.1, .5, .35, .35])
         for tick in ax12.xaxis.get_major_ticks():
             tick.label.set_fontsize(6)
