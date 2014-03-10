@@ -12,10 +12,11 @@ B = SFT('B', ['normal', 'infected'], ['C', 'D'],
        ['clean', 'malicious'], 'internal')
 
 C = SFT('C', ['normal', 'infected'], ['D'],
-       {'D': np.array([[1, 0], [1,.1]])},
+       {'D': np.array([[1, 0], [1, .1]])},
        ['clean', 'malicious'], 'internal')
 
 D = SFT('D', ['normal', 'infected'], [], {}, [], 'internal')
+
 
 T=10000
 nodes = [A, B, C, D]

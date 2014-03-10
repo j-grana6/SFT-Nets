@@ -2,7 +2,7 @@ import numpy as np
 import copy
 import operator
 from scipy.stats import poisson, norm
-
+import pandas as pd
 
 def gen_data(T, SFTNet, t0):
     """
@@ -41,7 +41,9 @@ def gen_data(T, SFTNet, t0):
     t = 0
     # initialize start time
     infect_times = dict(zip([x.name for x in SFTNet.nodes], [T]*n_nodes))
-    infect_times['A'] = 0
+    for key, val in t0.iteritems():
+        if val == 'infected':
+            infect_times[key] = 0
     state = s0
     for s in range(len(state)):
         SFTNet.nodes[s].state = state[s]
@@ -160,6 +162,8 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
     # First order the infections
     sorted_infect = sorted(infect_times.iteritems(),
                            key=operator.itemgetter(1))
+    if min(infect_times.values()) < 0:
+        return [-np.inf, - np.inf]
     not_infected = [nd for nd in SFTNet.node_names \
                     if nd not in infect_times.keys()]
     # Creates a list of tuples and then sorts by the value
@@ -313,7 +317,6 @@ def prob_model_no_attacker(SFTnet, data, T):
             normal_ix = node.states.index('normal')
             clean_ix = node.messages.index('clean')
             rate = node.rates[rec][normal_ix, clean_ix]
-            print rate
             num_sent = np.sum((data[2] == node.name) * (data[3] == rec))
             logprob = -rate * T + num_sent * (np.log(rate * T))  \
                 - np.sum(np.log(np.arange(1, num_sent + 1, 1)))
@@ -404,3 +407,29 @@ def rhs_integral(SFTNet, data, T):
 def gen_logn_fact(data):
     return np.hstack((np.zeros(1), np.cumsum(np.log(np.arange(1, len(data[0])+2,1)))))
 
+
+def gen_trans_frame(net):
+    import pandas as pandas
+    ix1 = []
+    for node in net.node_names:
+        ix1.extend([node]*len(net.node_names))
+    ix2 = net.node_names * len(net.node_names)
+    ix1 = np.asarray(ix1)
+    ix2 = np.asarray(ix2)
+    ix = pandas.MultiIndex.from_arrays([ix1, ix2],names= ['sender', 'receiver'])
+    df = pandas.DataFrame(np.zeros(shape=(len(ix1), 3)),
+                          columns = ['normal-clean rate', 'infected-clean rate', 'infected-malicious rate'],index=ix)
+    for i in range(len(net.nodes)):
+        nd = net.nodes[i]
+        normstate_ix = nd.states.index('normal')
+        infstate_ix = nd.states.index('infected')
+        try :
+            cleanmsg_ix = nd.messages.index('clean')
+            malmsg_ix = nd.messages.index('malicious')
+        except Exception:
+            print 'Doesn\'t send'
+        for o_node in nd.sends_to:
+            df.set_value((nd.name, o_node), 'normal-clean rate', nd.rates[o_node][normstate_ix, cleanmsg_ix])
+            df.set_value((nd.name, o_node), 'infected-clean rate', nd.rates[o_node][infstate_ix, cleanmsg_ix])
+            df.set_value((nd.name, o_node), 'infected-malicious rate', nd.rates[o_node][infstate_ix, malmsg_ix])
+    return df

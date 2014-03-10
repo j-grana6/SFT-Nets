@@ -40,6 +40,10 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
     T: int
 	observation length.
     """
+    numattackers = 0
+    for stat in s0.values():
+        if stat == 'infected':
+            numattackers += 1
     logn_fact = gen_logn_fact(data)
     # Local assignments.
     nodes = SFTnet.nodes
@@ -109,19 +113,22 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
             samples.append(pd_a)
             # If no node is infected at all time, corresponding to no attacker case.
             # Number of infected nodes in the ordering.
-        m = len(v)-1
+        m = len(v) - numattackers
         # Normalizing constant.
         nc = T ** m / factorial(m)
-        # Average up the samples for thisv.
-        av = np.mean(np.exp(samples)) * nc
+        # Average up the samples for this v.
+        # Need to take out -inf's
+        samples = np.asarray(samples)
+        ix =  samples == -np.inf
+        samples1 = samples[~ix]
+        av = np.sum(np.exp(samples)) * nc / float(samp_size)
         ncs.append(nc)
         # Add this average number to "averages".
         averages.append(av)
         samp_col.append(samples)
     # Sum up all of the averages for each v
     lhood = np.log(np.sum(averages))
-
-    return lhood, samp_col, ncs
+    return lhood, samp_col, ncs, samples, averages
 
 
 if __name__ =='main':

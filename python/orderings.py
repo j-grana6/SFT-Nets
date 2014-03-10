@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 from itertools import permutations
+from collections import defaultdict
 
 def validate(order, sends_fr, s0):
     """
@@ -128,8 +129,30 @@ def gen_orderings(SFTnet,s0):
         # If the flag is positive, keep the ordering; otherwise, remove it.
         if valid == False:
             orderings.remove(order)
+    attacker_nodes = set([nd for nd in s0.keys() if s0[nd] =='infected'])
+    numattackers = len(attacker_nodes)
+    neworderings = copy.copy(orderings)
+    # This ensures the attackers are the first to be infected.  Thus we do not
+    # need to worry about impossible cases
+    for order in orderings:
+        orderstart = order[:numattackers]
+        if not attacker_nodes.issubset(set(orderstart)):
+            neworderings.remove(order)
 
-    return orderings
+    # This block makes sure we don't have duplicates in the case where there
+    # are multiple attackers.
+    newneworderings = []
+    ends = defaultdict(list)
+    newneworderings.append(tuple([nd for nd in s0.keys() if s0[nd] =='infected']))
+    for order in neworderings:
+        if len(order) != numattackers:
+            end = order[numattackers:]
+            if not end in ends[len(order)]:
+                newneworderings.append(order)
+                ends[len(order)].append(order[numattackers:])
+        
+        
+    return newneworderings
 
 
 # Test the gen_orderings function.
