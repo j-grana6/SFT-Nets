@@ -73,7 +73,7 @@ def MCMC_MH(SFTNet, data, s0, N,  T, proposal_var=100, print_jumps=False):
             z0 = copy.deepcopy(z1)
         for key, val in z0.iteritems():
             time_samples[key].append(val)
-        probs.append(p0)
+        probs.append(p0[:2])
         n += 1
     probs = np.asarray(probs)
     out_ar = np.hstack((np.asarray(time_samples.values()).T, probs))

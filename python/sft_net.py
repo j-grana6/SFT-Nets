@@ -172,3 +172,6 @@ class SFTNet(object):
                             # in the state determined by config.
             transmission_mats.append(transmission)
         self.mal_trans_mats = transmission_mats
+
+
+        

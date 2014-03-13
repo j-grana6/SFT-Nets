@@ -301,7 +301,7 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
                 prob_data += prob_before + prob_after
 
 
-    return [prob_sequence + prob_exact_times + noinfect_prob,  prob_data]
+    return [prob_sequence + prob_exact_times + noinfect_prob,  prob_data, prob_sequence + noinfect_prob]
 
 def prob_model_no_attacker(SFTnet, data, T):
     """

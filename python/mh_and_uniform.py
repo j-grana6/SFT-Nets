@@ -3,29 +3,34 @@ from testing_net import net as brian_net
 from uniform_approx import *
 #from mh_0_infty import *
 from lhood_comps import MCMC_MH
+from mcmc_over_dags import MCMC_sequence
 
-net =brian_net
+net = brian_net
 def go(SFTNet, T, s0, uniform_sample_size, Mh_steps):
     data = gen_data(T, net, s0)
     print data[-1]
     mh_res = MCMC_MH(SFTNet, data, s0, Mh_steps, T, proposal_var=1000, print_jumps=False)
+    print 'first mc done'
+    mh_sequence_res = MCMC_sequence(SFTNet, data, s0, Mh_steps, T)
     uni_res = uniform_samp(SFTNet, s0, uniform_sample_size, T, data)
-    return uni_res, mh_res, data
+    return uni_res, mh_res,  data, mh_sequence_res
 
 if __name__ == '__main__':
     reps = 1
-    #t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal', 'E': 'normal', 'F': 'infected'}
+    t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal', 'E': 'normal', 'F': 'infected'}
     t0 = {'A': 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'}
     mh_t = []
     mh_res = []
+    mh_seq_res = []
     uni = []
     uni_times = []
     diffs=[]
     times = []
     truep = []
     for i in range(reps):
-        res = go(net, 10000, t0, 2000, 500000)
+        res = go(net, 10000, t0, 1000, 1000000)
         mh_res.append(res[1])
+        mh_seq_res.append(res[3])
         uni.append(res[0])
         uni_times.append(res[0][0])
         mh_time = res[1].calc_log_likelihood(burnin=0)
@@ -33,11 +38,14 @@ if __name__ == '__main__':
         diffs.append(res[0][0] - mh_time)
         times.append(res[2][-1])
         truep.append(res[1].p_true_vals)
-        print mh_time -res[0][0]
-        print '================'
-        # print res[1].calc_log_likelihood(burnin=50000) - res[0][0]
+        
+        print res[1].calc_log_likelihood(burnin=50000), res[0][0], res[3].calc_log_likelihood(burnin=50000)
+        print 'prob no = ', res[1].p_no_attacker
+        # print mh_time -res[0][0]
         # print '================'
-        # print res[1].calc_log_likelihood(burnin=100000) - res[0][0]
+        # print res[1].calc_log_likelihood(burnin=1000) - res[0][0]
+        # print '================'
+        # print res[1].calc_log_likelihood(burnin=1000) - res[0][0]
     from matplotlib import pyplot as plt
     b_times = [time['B'] for time in times]
     c_times = [time['C'] for time in times]
@@ -125,8 +133,8 @@ if __name__ == '__main__':
         n1 = ax12.plot(mh_res[r].res['B'], label='B')
         n2 = ax12.plot(mh_res[r].res['C'], label='C')
         n3 = ax12.plot(mh_res[r].res['D'], label='D')
-        n4 = ax12.plot(mh_res[r].res['E'], label='E')
-        ax12.legend(n1+n2+n3+n4, ['B', 'C', 'D','E'], loc = 'upper center', fancybox=True, ncol=3, bbox_to_anchor=(.5, 1.15))
+        #n4 = ax12.plot(mh_res[r].res['E'], label='E')
+        ax12.legend(n1+n2+n3, ['B', 'C', 'D'], loc = 'upper center', fancybox=True, ncol=3, bbox_to_anchor=(.5, 1.15))
         ax12.set_position([.1, .5, .35, .35])
         for tick in ax12.xaxis.get_major_ticks():
             tick.label.set_fontsize(6)
