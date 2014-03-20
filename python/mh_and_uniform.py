@@ -9,15 +9,15 @@ net = brian_net
 def go(SFTNet, T, s0, uniform_sample_size, Mh_steps):
     data = gen_data(T, net, s0)
     print data[-1]
-    mh_res = MCMC_MH(SFTNet, data, s0, Mh_steps, T, proposal_var=1000, print_jumps=False)
-    print 'first mc done'
-    mh_sequence_res = MCMC_sequence(SFTNet, data, s0, Mh_steps, T)
+    #mh_res = MCMC_MH(SFTNet, data, s0, Mh_steps, T, proposal_var=1000, print_jumps=False)
+    #print 'first mc done'
+    mh_sequence_res = MCMC_sequence(SFTNet, data, s0, Mh_steps, T, print_jumps=False, alpha=.01)
     uni_res = uniform_samp(SFTNet, s0, uniform_sample_size, T, data)
     return uni_res, mh_res,  data, mh_sequence_res
 
 if __name__ == '__main__':
     reps = 1
-    t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal', 'E': 'normal', 'F': 'infected'}
+    #t0 = { 'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal', 'E': 'normal', 'F': 'infected'}
     t0 = {'A': 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'}
     mh_t = []
     mh_res = []
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     times = []
     truep = []
     for i in range(reps):
-        res = go(net, 10000, t0, 1000, 1000000)
+        res = go(net, 10000, t0, 5000, 50000)
         mh_res.append(res[1])
         mh_seq_res.append(res[3])
         uni.append(res[0])
@@ -39,7 +39,7 @@ if __name__ == '__main__':
         times.append(res[2][-1])
         truep.append(res[1].p_true_vals)
         
-        print res[1].calc_log_likelihood(burnin=50000), res[0][0], res[3].calc_log_likelihood(burnin=50000)
+        print  res[0][0], res[3].calc_log_likelihood(burnin=50000)
         print 'prob no = ', res[1].p_no_attacker
         # print mh_time -res[0][0]
         # print '================'

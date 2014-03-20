@@ -114,8 +114,8 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
             # If no node is infected at all time, corresponding to no attacker case.
             # Number of infected nodes in the ordering.
         m = len(v) - numattackers
-        # Normalizing constant.
-        nc = T ** m / factorial(m)
+        #Normalizing constant.
+        nc = T ** m / factorial(m) * 1/.54450
         # Average up the samples for this v.
         # Need to take out -inf's
         samples = np.asarray(samples)
@@ -130,6 +130,15 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
     lhood = np.log(np.sum(averages))
     return lhood, samp_col, ncs, samples, averages
 
+def plot_uniform_convergence(unires):
+    unif_samps = np.exp(np.asarray(unires[1]))
+    (num_configs, samps_per) = unif_samps.shape
+    ncs = np.asarray(unires[2]).reshape(num_configs, 1)
+    unif_samps = unif_samps * ncs
+    unif_samps = np.cumsum(unif_samps, axis=1)
+    unif_samps = unif_samps / np.arange(1, samps_per +1, 1)
+    uni_ma = np.log(np.sum(unif_samps, axis=0))
+    return uni_ma
 
 if __name__ =='main':
     # Test the uniform_samp()
