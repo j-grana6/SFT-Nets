@@ -1,0 +1,52 @@
+\documentclass{article}
+\usepackage{amsmath}
+\begin{document}
+\title{Improving MCMC}
+
+Recall that we are integrating 
+
+\begin{equation}
+\int d\bar{z} P(data | \bar{z},s)P(s)P(\bar{z} |s)
+\end{equation}
+
+where $s$ is the infection ordering, and $\bar{z}$ are the actual infection times.  Also note that for any $s$ we can explicitely compute $P(s)$.  This is simply the product of the term on the far right of mcmc\_calc.pdf (equation 2 below for convenience).  
+
+\begin{equation}
+P(s_2, \bar{z_2} | s_1. z_1 =0)  =
+\lambda(1) e^{- \lambda(1) (\bar{z_2} - \bar{z_1})} 
+\times \frac{\lambda(1,2)}{\lambda(1)}
+\end{equation}
+
+        (from mcmc\_calc.tex)``as in the Gillespie algorithm -- the
+	expression on the RHS equals the probability that the first transition
+	among all the nodes that are connected to $s_1$ occurs at the time
+	$\bar{z_2}$, times the probability that it is node $s_2$ that makes that
+	transition). ``
+
+Also, note that if we knew the infection ordering $s$ we would be able to draw from the distribution of the infection times.  To do so we sample the infection time, $\bar{z_2}$ of $s_2$ from an exponential distribution that is truncated at $T$.  Then we would sample $z_3$ from  $\bar{z_2}$ $+$ an exponential random variable truncated at $T-\bar{z_2}$.  Proceeding in this way, we can sample  all of the infection times from their true distribution given $s$.  
+
+The implication for the MCMC is that we do not need to accept/reject based on the infection times $\bar{z}$ but instead accept and reject based only on the node ordering $s$ and for each $s$, we can compute $P(data | z, s)P(z)$ by simple monte carlo.  The pseudo code would be as follows:
+
+\begin{itemize}
+\item Create a set $S$ that contains all allowable node infection orderings of 
+size $M \le N$.
+\item likelihoods-given-s $\rightarrow$ []
+\item \textbf{Draw} a starting value $\hat{s}$ from $S$ 
+\item \textbf{for} order-sample \textbf{in} 1:number of mcmc samples
+\begin{itemize}
+\item \textbf{Draw} $\widetilde{s}$ from $S$
+\item \textbf{if} $\frac{P(\widetilde{s})}{P(\hat{s})} > U$
+\begin{itemize} 
+\item $\hat{s} = \widetilde{s}$
+\end{itemize}
+\item samples-given-s $\rightarrow$ []
+\item \textbf{for} time-sample \textbf{in} 1: number of samples per ordering
+\begin{itemize}
+\item \textbf{Draw} $\bar{z}$ from $P(\bar{z}|\hat{s})$ by the method above.
+\item \textbf{append}  $P(\text{data } | \bar{z}, \hat{s})$ to samples-given-s
+\end{itemize}
+\item \textbf{append} mean(samples-given-s) to likelihoods-given-s
+\end{itemize}
+\item \textbf{return} mean(likelihoods-given-s)
+\end{itemize}
+\end{document}
