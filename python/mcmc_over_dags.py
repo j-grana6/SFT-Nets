@@ -93,9 +93,9 @@ def MCMC_sequence(SFTNet, data, s0, N,  T, proposal_var=100, print_jumps=False, 
                 print 'A Jump at, ', n, 'to ', z1, 'with prob', p1, '\n'
             if switch_order:
                 #print ' new order ', order, ' at ', n
-            p0 = p1
-            z0 = copy.deepcopy(z1)
-            order = new_order
+                p0 = p1
+                z0 = copy.deepcopy(z1)
+                order = new_order
         for key, val in z0.iteritems():
             time_samples[key].append(val)
         for nd in nodes_to_change:
