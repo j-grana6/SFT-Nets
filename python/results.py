@@ -54,10 +54,11 @@ class Results(object):
         log_likelihood = np.log(np.mean(np.exp(probs)))
         return log_likelihood
 
-    def plot_convergence(self):
+    def plot_convergence(self, burnin=500):
         if  self.metropolis:
-            running_llhood = np.log(np.cumsum(np.exp(self.log_pdata))\
-                            / np.arange(len(self.log_pdata)))
+            lpd = self.log_pdata[burnin:]
+            running_llhood = np.log(np.cumsum(np.exp(lpd))\
+                            / np.arange(len(lpd)))
 
         # else:
         #     log_probs = self.log_pz + self.log_pdata

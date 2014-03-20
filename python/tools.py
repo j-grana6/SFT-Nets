@@ -433,3 +433,16 @@ def gen_trans_frame(net):
             df.set_value((nd.name, o_node), 'infected-clean rate', nd.rates[o_node][infstate_ix, cleanmsg_ix])
             df.set_value((nd.name, o_node), 'infected-malicious rate', nd.rates[o_node][infstate_ix, malmsg_ix])
     return df
+
+def trunc_expon(rate, truncation):
+    """
+    rate :
+        the rate
+
+    truncation :
+        truncation time
+    """
+    rate = float(rate)
+    
+    R = np.random.random()*(1-np.exp(-truncation*rate))
+    return -np.log(1-R)*1./rate

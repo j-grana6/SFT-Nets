@@ -4,9 +4,11 @@ from uniform_approx import uniform_samp
 from lhood_comps import MCMC_MH
 from tools import gen_data, prob_model_no_attacker 
 import numpy as np
+from mcmc_over_dags import MCMC_sequence
 
 def get_roc_coords(seed, num_pos, num_neg, i_net,s0,
-                   method = 'uniform', T=1000, uni_samp_size = 2000, mcmc_steps =500000, printsteps=False):
+                   method = 'mcmc', T=1000, uni_samp_size = 2000, mcmc_steps =5000,
+                   burnin_rate = .25, printsteps=False):
     """
     num_pos : int
         Number pf infected nets in the sample
@@ -39,8 +41,8 @@ def get_roc_coords(seed, num_pos, num_neg, i_net,s0,
         if method == 'uniform' :
             res = uniform_samp(i_net, s0, uni_samp_size, T, data)[0]
         else :
-            mh_res = MCMC_MH(i_net, data, s0, 500000, T , print_jumps=False)
-            res = mh_res.calc_log_likelihood(burnin = .1 * mcmc_steps)
+            mh_res = MCMC_sequence(i_net, data, s0, mcmc_steps, T , print_jumps=False)
+            res = mh_res.calc_log_likelihood(burnin=int(burnin_rate * mcmc_steps))
         p_no_attacker = prob_model_no_attacker(i_net, data, T)
         # infected_lhoods.append((uni_res[0], p_no_attacker))
         infected_lhoods.append((res, p_no_attacker))
@@ -51,8 +53,8 @@ def get_roc_coords(seed, num_pos, num_neg, i_net,s0,
         if method == 'uniform':
             res = uniform_samp(i_net, s0, uni_samp_size, T, data)[0]
         else :
-            mh_res = MCMC_MH(i_net, data, s0, 500000, T, print_jumps=False)
-            res = mh_res.calc_log_likelihood(burnin=.1 * mcmc_steps)
+            mh_res = MCMC_sequence(i_net, data, s0, mcmc_steps, T, print_jumps=False)
+            res = mh_res.calc_log_likelihood(burnin=int(burnin_rate * mcmc_steps))
         p_no_attacker = prob_model_no_attacker(i_net, data, T)
         
         clean_lhoods.append((res, p_no_attacker))
@@ -129,7 +131,7 @@ def clean_res(results, percore,numcores=4):
     return pos, neg
     
 if __name__ == '__main__':
-    percore =100
+    percore =1
     s0 = {'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'} 
     def f(seed):
         return get_roc_coords(seed, percore, percore, briansnet, s0=s0, T=10000, printsteps=True)

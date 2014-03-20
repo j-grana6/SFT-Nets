@@ -7,6 +7,7 @@ from results import Results
 import random
 from orderings import gen_orderings
 import operator
+from tools import trunc_expon
 
 def MCMC_sequence(SFTNet, data, s0, N,  T, proposal_var=100, print_jumps=False, alpha=1):
     #  TODO Need to profile this
@@ -79,12 +80,7 @@ def MCMC_sequence(SFTNet, data, s0, N,  T, proposal_var=100, print_jumps=False, 
             cross_s_ix = SFTNet.cross_S.index(state)
             nd_ix = SFTNet.node_names.index(nd)
             incoming_rate = np.sum(SFTNet.mal_trans_mats[cross_s_ix][:, nd_ix])
-            less_than_T = False
-            while not less_than_T:
-                new_time = last_infect   + np.random.exponential(1./incoming_rate)
-                if new_time < T:
-                    less_than_T = True
-            last_infect = new_time
+            last_infect = last_infect   + trunc_expon(incoming_rate, T-last_infect)
             z1[nd] = last_infect
             state[nd_ix] = 'infected'
         p1 = prob_mod(z1)
