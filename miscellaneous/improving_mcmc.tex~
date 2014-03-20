@@ -1,0 +1,24 @@
+\usepackage{amsmath}
+\documentclass{article}
+\begin{document}
+\title{Improving MCMC}
+
+Recall that we are integrating 
+
+\begin{equation}
+\int d\bar{z} P(data | \bar{z},s)P(s)P(\bar{z} |s)
+\end{equation}
+
+where $s$ is the infection ordering, and $\bar{z}$ are the actual infection times.  Also note that for any $s$ we can explicitely compute $P(s)$.  This is simply the product of the term on the far right of mcmc\_calc.pdf (equation 2 below for convenience).  
+
+\begin{equation}
+P(s_2, \bar{z_2} | s_1. z_1 =0)  =
+\lambda(1) e^{- \lambda(1) (\bar{z_2} - \bar{z_1})} 
+\times \frac{\lambda(1,2)}{\lambda(1)}
+\end{equation}
+
+        (from mcmc\_calc.tex)``as in the Gillespie algorithm -- the
+	expression on the RHS equals the probability that the first transition
+	among all the nodes that are connected to $s_1$ occurs at the time
+	$\bar{z_2}$, times the probability that it is node $s_2$ that makes that
+	transition). ``

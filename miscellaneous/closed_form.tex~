@@ -1,0 +1,18 @@
+\documentstype{article}
+\usepackage{amsmath}
+\usepackage[margin=1in]{geometry}
+\begin{document}
+\title{Closed Form Solution}
+\maketitle
+
+For simplicity, let's assume that we are working with a net with only $1$ attacker ``A'' and $1$ node that can possible be infected ``B''.  This makes it simple because there are only 2 possible ``infection orderings''.  One is where the node gets infected before the observation window ends $T$ and one where it doesn't get infected.  The latter is trivial to compute.  First some notation, let $\lambda_1$ be the rate that ``B'' sends messages given it is not infected.  Let $\lambda_2$ be the rate the ``B'' sends messages given it is infected.  Let $\gamma$ be the rate at which ``A'' sends infected messages to ``B''.  Let $k_{\bar{z}}$ be the number of messages the ``B'' sends before $\bar{z}$ is infected and let $N$ be the total number of messages that ``B'' sends.  Since only one node can be infected drop the subscripy and let $\bar{z} be the infection time of `''B''. Here we go...
+ 
+\begin{align}
+\int_0^Td\bar{z} P( \text{ data } | \bar{z}) P(\bar{z} | s) = \\
+\int_0^Td\bar{z}\frac{(\lambda_1\bar{z})^{k_\bar{z}}e^{-\lambda_1\bar{z}}}{k_{\bar{z}}!}\times \frac{(\lambda_2(T _\bar{z}))^{N-k_\bar{z}}e^{-\lambda_1\bar{z}}}{k_{\bar{z}}!}
+
+
+
+
+
+\end{document}

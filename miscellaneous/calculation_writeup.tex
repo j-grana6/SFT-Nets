@@ -1,0 +1,124 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[margin=1in]{geometry}
+\begin{document}
+\title{Calculation Notes}
+
+
+\maketitle
+
+\section{The problem}
+
+The problem at hand is that we are trying to compute
+
+\begin{equation}
+\int dz P(d | z, \text{net infected at } t = 0) P(z | \text{net infected at } t=0)
+\end{equation}
+
+Here, $d$ is data, and $z$ are node infection times.  Since we are approaching 2 month on calculing this integral, it is obviously not trivial to compute.  The main reasons are:
+
+\begin{itemize}
+\item There are many $z$'s such that $P(z | \text{net infected at } t=0)=0$.  That means doing a simple uniform sampling will be very inefficient.
+\item It is unclear how to handle nodes that do not get infected by the end of the observation window, which we have been denoting as $T$.  In other words, how do we sample and compute the probability of certain infection times when some nodes get infected and others do not.
+\end{itemize}
+
+To tackle these two problems, we devised 4 algorithms.  Two of the algorithms involve sampling the infection times, $z$ in the interval $[0, \infty]$.  The other two involve sampling $z$ in the interval from $[0, T]$.  The intuition behind the second method is as follows.  Suppose we are working with a net of 4 nodes $v_1, v_2, v_3,$ and $v_4$.  Let $z_i$ be the infection time of node $v_i$.  Furthermore, suppose the $v_1$ is the node that is the initial attacker and therefore $z_1 =0$.  Now, to compute the likelihood, we need to consider the case where all nodes get infected by $T$, only $v_2$ gets infected by $T$, only $v_2$ and $v_3$ gets infected bt $T$... and so on until all possible combinations are exhausted.  To sample over $[0, T]$, we take each of these cases separately.  When doing (uniform) importance sampling, we consider  each \emph{ordering} separately.  For example, the case where  $v_2$ gets infected first, $v_3$ gets infected second and $v_4$ does not get infected will be computed independently from the case where $v_3$ gets infected first, $v_2$ gets infected second and $v_4$ does not get infected.  By proceeding this we, we completely remove any $z$'s that are not allowed given the configuration of the net.  Therefore for any sample of $z$ done this way the value of the integrand will be strictly greater than 0.
+
+\pagebreak
+
+\section{(Uniform) Importance Sampling over $[0, T]$ }
+
+The pseudo code is as follows:
+
+\begin{itemize}
+\item $V \leftarrow \{v_i\}$    (The set containing all nodes)
+\item  $S \leftarrow$ set of all allowable infection orderings, including the orderings where some nodes did not get infected.  For example an element $s \in S$ might be $\{v_2\}$ or $\{v_3, v_4, v_2\}$. We also write $z_s$ as the infection times that correspond to the order of $s$.  For example, if we sample $s = \{v_2, v_3, v_1\}$ and $z_s = \{3000, 3400, 5000\}$ then the infection time of $v_2=3000$, the infection time of $v_3= 3400$, and the infection time of $v_1 = 5000$.
+\item $K \leftarrow 20,000$  (Number of samples of $z_{s_i}$)
+\item $lhood \leftarrow 0$
+\item \textbf{FOR} $s \in S$           (For each ordering)
+\begin{itemize}
+\item $plist \leftarrow []$ (Store all samples)
+\item $M$ $\leftarrow$ len($s$)  (The number of nodes that are infected)
+\item $normconst \leftarrow \frac{T^M}{M!}$
+\item \textbf{FOR} $k$ in range($K$)
+\begin{itemize}
+\item $z_s \leftarrow$ \textbf{sort}(\textbf{rand}($[0,T]^M$))  (Sample infection times)
+\item $pz_{infected} \leftarrow P(z_{s}, s | \text{net infected at } t=0)$ (as in ASCII)
+\item $pz_{not \; infected} \leftarrow \prod_{j \in V\setminus s} \exp(-\lambda_j (T- \max(z_{s_i})))$
+\item $pz \leftarrow pz_{infected}\cdot pz_{not \; infected}$
+\item $pdata \leftarrow P(d | z,s, \text{ net infected at } t=0)$ (as in ASCII)
+\item $ptotal \leftarrow  pdata \cdot pz$
+\item $plist$ \textbf{append}  $ptotal$
+\end{itemize}
+\item $ lhood \; += \; normcons * \text{ \textbf{mean}}(plist)$
+\end{itemize}
+\item \textbf{return} $lhood$
+\end{itemize}
+
+Note the line $pz_{not \; infected} \leftarrow \prod_{j \in V\setminus s} \exp(-\lambda_j (T- \max(z_{s_i})))$.  This says, for every node $j$ that is not infected by $T$, find the probability of it not getting infected in the time period between the last node that got infected and $T$.  This is just $1-(1-e^{\lambda_j\tau}$ where $\lambda_j$ is the rate at which it receives malicious messages and $\tau$ is just $T-$ time last node gets infected.
+
+\pagebreak
+
+\section{Metropolis Hastings over $[0, \infty]$}
+
+In this case, we do not need to evaluate the integral in parts.  Instead we can propose a $z$ where $\max(z) > T$ and compute $P(d | z, \text{net infected at } t = 0)$ and $P(z | \text{net infected at } t=0)$.  In this MCMC, we are going to accept and reject based on $P(z | \text{net infected at } t=0)$.
+
+Note that similar to the importance sampling case, we are also going to create a set of all possible node orderings so that we do not sample $z$'s that have a probability $0$.  However, unlike the importance sampling, the set of possible orderings only includes the elements where all nodes get infected.  For example, for a net with $N$ nodes, all possible orderings must be of length $N$.
+
+In this algorithm, we will be sampling infection times and infection orderings.  If the infection ordering is $s_i$, then the vector $z_i$ represents the infection times in order of the nodes given by $s_i$.  For example, if we sample $s_1 = \{v_2, v_3, v_1\}$ and $z_1 = \{3000, 3400, 5000\}$ then the infection time of $v_2=3000$, the infection time of $v_3= 3400$, and the infection time of $v_1 = 5000$.
+
+\begin{itemize}
+\item $S \leftarrow$ a set whose elements are allowable node infection orderings of length $N$
+\item $s_0 \leftarrow $ \textbf{sample}$(S)$ (Sample an ordering)
+\item $z_{s_0} \leftarrow$ \textbf{SORT}(\textbf{rand}($[0, T]^N$)) (Sample infection times)
+\item $K \leftarrow 100,000$ ( Number of MCMC samples)
+\item $\alpha \leftarrow .01$ (Set $\alpha$ value)
+\item $\sigma^2 \leftarrow 500$ (Set standard deviation of proposal)
+\item $probs \leftarrow []$ (List to store integrand values)
+\item for $k$ in \textbf{range}(K)
+\begin{itemize}
+\item \textbf{if} $\alpha$ $<$ $U(0,1)$
+\begin{itemize}
+\item $s_1 \leftarrow \textbf{sample}(S)$ (Sample a new infection order)
+\end{itemize}
+\item \textbf{else}
+\begin{itemize}
+\item  $s_1 \leftarrow s_0$ (Keep old infection order)
+\end{itemize}
+\item $z_{s_1} \leftarrow$ \textbf{sort} ($z_{s_0} + \overrightarrow{\mathcal{N}(0, \sigma^2)})$ (Draw proposed infection time)
+\item \textbf{If} $\frac{P(z_{s_1}, s_1 | \text{net infected})}{P(z_{s_0}, s_0 | \text{net infected})} > \mathbf{U}(0,1)$ (MH STEP)
+\begin{itemize}
+\item $s_0 \leftarrow s_1$ (Move to the new infection ordering)
+\item $z_{s_0}  \leftarrow z_{s_1}$ (Move to the new infection times)
+\end{itemize}
+\item \textbf{else}
+\begin{itemize}
+\item $s_0 \leftarrow s_0$ (Stay at previous infection ordering)
+\item $z_{s_0} \leftarrow z_{s_0}$     (Stay at previous infection times)
+\end{itemize}
+\item $probs$ \textbf{append} $P(d | z_{s_0}, s_0,  \text{net infected at } t=0)$
+\end{itemize}
+\item $lhood \leftarrow$ \textbf{mean}$(probs)$
+\item \textbf{return }$lhood$
+\end{itemize}
+
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

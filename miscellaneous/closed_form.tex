@@ -1,0 +1,65 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[margin=1in]{geometry}
+\begin{document}
+\title{Closed Form Solution}
+\maketitle
+
+For simplicity, let's assume that we are working with a net with only $1$ attacker ``A'' and $1$ node that can possibly be infected ``B''.  This makes it simple because there are only 2 possible ``infection orderings''.  One is when the node gets infected before the observation window ends at $T$ and one where it doesn't get infected.  The latter is trivial to compute.  First some notation, Let $\lambda_1$ be the rate that ``B'' sends messages given it is not infected.  Let $\lambda_2$ be the rate that ``B'' sends messages given it is infected.  Let $\gamma$ be the rate at which ``A'' sends infected messages to ``B''.  Let $k_{x}$ be the number of messages that ``B'' sends before $x$  and let $N$ be the total number of messages that ``B'' sends.  Since only one node can be infected drop the subscript and let $\bar{z}$ be the infection time of ``B''. Here we go...
+ 
+\begin{align}
+&\int_0^T P( \text{ data } | \bar{z}) P(\bar{z} | s) d\bar{z}  \nonumber \\
+&=\int_0^T P( \text{ messages before  } \bar{z} | \bar{z}) \times 
+P( \text{ messages after  } \bar{z} | \bar{z})\times  P(\bar{z} | s)d\bar{z} \\
+&=\int_0^T   \frac{(\lambda_1\bar{z})^{k_{\bar{z}}}e^{-\lambda_1\bar{z}}}{k_{\bar{z}}!} \times 
+                  \frac{(\lambda_2(T- \bar{z}))^{N-k_{\bar{z}}}e^{-\lambda_2(T-\bar{z})}}{(N-k_{\bar{z}})!} \times
+                  \gamma e^{-\gamma\bar{z}}d\bar{z} \\
+& \text{ Denote } m_i \text{ as the time of the } i \text{th message sent by ``B''}\\
+& \text{ and } m_0 =0 \text{ and } m_{N+1} = T \\
+& = \sum_{i=0}^N \int_{m_i}^{m_{i+1}-\Delta t}\frac{(\lambda_1\bar{z})^{k_{\bar{z}}}e^{-\lambda_1\bar{z}}}{k_{\bar{z}}!} \times 
+                  \frac{(\lambda_2(T- \bar{z}))^{N-k_{\bar{z}}}e^{-\lambda_2(T-\bar{z})}}{(N-k_{\bar{z}})!} \times
+                  \gamma e^{-\gamma\bar{z}}d\bar{z} \\
+& \text{Note that for each integral, $k$ is a constant.  This is because we subtract an} \nonumber \\
+& \text{arbitrarily small positive number } \Delta t, \text{ from the upper limit of the integral} \nonumber \\
+& \text{Therefore, let } k_i \text{ be the number of messages sent by node ``B'' at or before } m_i \nonumber\\ 
+& = \lim_{\Delta t \to 0^+}  \sum_{i=0}^N \frac{1}{k_i!(N-k_i)!}
+                  \int_{m_i}^{m_{i+1}-\Delta t}(\lambda_1\bar{z})^{k_I}e^{-\lambda_1\bar{z}} \times 
+                  (\lambda_2(T- \bar{z}))^{N-k_i}e^{-\lambda_2(T-\bar{z})} \times
+                  \gamma e^{-\gamma\bar{z}} d\bar{z} \nonumber\\
+& = \lim_{\Delta t \to 0^+}  \sum_{i=0}^N \frac{\lambda_1^{k_i}\lambda_2^{N-k_i}}{k_i!(N-k_i)!}
+                  \int_{m_i}^{m_{i+1}-\Delta t}\bar{z}^{k_I}e^{-\lambda_1\bar{z}} \times 
+                  (T- \bar{z})^{N-k_i}e^{-\lambda_2(T-\bar{z})} \times
+                  \gamma e^{-\gamma\bar{z}} d\bar{z} \nonumber\\
+& = \lim_{\Delta t \to 0^+}  \sum_{i=0}^N \frac{e^{-\lambda_2 T}\lambda_1^{k_i}\lambda_2^{N-k_i}}{k_i!(N-k_i)!}
+                  \int_{m_i}^{m_{i+1}-\Delta t}  \bar{z}^{k_I}e^{-\lambda_1\bar{z}} \times 
+                  (T- \bar{z})^{N-k_i}e^{\lambda_2\bar{z}} \times
+                  \gamma e^{-\gamma\bar{z}} d\bar{z} \nonumber \\
+& = \lim_{\Delta t \to 0^+}  \sum_{i=0}^N \frac{e^{-\lambda_2 T}\lambda_1^{k_i}\lambda_2^{N-k_i} \gamma}{k_i!(N-k_i)!}
+                 \int_{m_i}^{m_{i+1}-\Delta t}  \bar{z}^{k_I} (T- \bar{z})^{N-k_i}
+                 e^{\bar{z}(\lambda_2 -\lambda_1 -\gamma)}
+                  d\bar{z} \nonumber \\
+& \text{The issue with this integral is that the rates are non-homogeneous.  If the rates were} \nonumber \\
+& \text{homogeneous, the integration would be able to be done through integration by parts.} \nonumber \\
+& \text{However, the } (T-\bar{z})^{N-k_i} \text { term makes this integral ``difficult''} \nonumber \\
+& \text{However, when I do not know how to solve an integral, I turn to something that can, namely, Mathematica} \nonumber \\
+& \text{You can see the exact Mathematica command below but for any two intervals points } m_, m_2 \nonumber \\
+& \text{The final value is} \nonumber \\
+& = \lim_{\Delta t \to 0^+}  \sum_{i=0}^N \frac{e^{-\lambda_2 T}\lambda_1^{k_i}\lambda_2^{N-k_i} \gamma}{k_i!(N-k_i)!}
+                 e^{(-\lambda_2 +\lambda_1 +\gamma)} T^{N+2}
+                 \big[\mathrm{Beta}(\frac{m_i}{T}, 2 +k_i, 1-k_i +n) - \mathrm{Beta}(\frac{m_{i+1}}{T}, 2 + k_i, 1-k_i +n) \big] \\
+& \text{ where Beta is the incomplete Beta function with parameters (x, a, b)} \nonumber
+\end{align}
+
+The main problem with this is that I have \textbf{no idea} how to get to that evaluation of the integral.  So going forward I see 3 paths.  The first is to attack this closed form calculation another way.  Maybe I approached it the wrong way.  The second path is to actually try and work toward that integral and try and derive it by hand.  The third path is to go ahead and implement it computationally and see what it looks like.  
+
+As a note, another reason why this integral is so difficult  is because  the bounds on the integral are the times that the possibly infected node sends messages.  Therefore,  it is possible that the node gets infected between times that it sends messages.  This makes me think that if instead of having $m_i$ as the messages sent by node ``B'', we define $m_i$ as the time of ith message defined by the union of all messages sent by ``B'' and all possible infected messages sent to ``B''.  In that case, we wouldn't need to do a definite integral over possible infection times because we know that a node can only become infected at the time it receives a malicious message.  This might be the possible fourth path.  
+
+Mathematica command : 
+
+\begin{verbatim}{Integrate[zbar^ki Exp (zbar*(lambda2 - lambda1 - gamma)) (T - zbar)^(n - ki), {zbar, m1, m2}, 
+ 
+Assumptions -> {T > 0, n > 0, n >=  ki, ki >= 0,  gamma > 0, lambda2 > lambda1 > 0, m1 > 0, 
+
+m2 > 0, m2 > m1, m2 <  T, m1 <= T}]}
+\end{verbatim}
+\end{document}
