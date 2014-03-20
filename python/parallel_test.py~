@@ -1,0 +1,7 @@
+def f():
+    def g(y):
+      return y**2
+  from multiprocessing import Pool
+  p=Pool(2)
+  res = p.map(g, [1,2])
+  return res  

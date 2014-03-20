@@ -1,0 +1,46 @@
+import numpy as np
+from tools import prob_model_given_data,  \
+      rhs_integral, gen_logn_fact, prob_model_no_attacker
+import copy
+import pandas as pandas
+from results import Results
+import random
+from orderings import gen_orderings
+from collections import defaultdict
+import itertools
+
+def closed_form_calc(SFTNet, s0, data,T):
+    """The usual inputs"""
+    lnf = gen_logn_fact(data)
+    orderings = gen_orderings(SFTNet, s0)
+    attackers  = [nd for nd in SFTNet.node_names if s0[nd] == 'infected']
+    probs = []
+    z0 = [0] * len(attackers)
+    for order in orderings :
+        print order
+        ordernodes = z0.extend(order)
+        num_infected = len(order)
+        already_infected = attackers
+        possibles = []
+        for nd in order[len(attackers):] :
+            possible_time = []
+            for o_node in already_infected:
+                try :
+                    possible_time.extend(
+                    list(data[5][o_node +'-'+ nd]))
+                except KeyError:
+                    print o_node + ' does not send to ' + nd
+                possibles.append(possible_time)
+            already_infected.append(nd)
+        order_cart = itertools.product(*possibles)
+        print len(list(order_cart))
+        while True:
+            try :
+                times = order_cart.next()
+                if sorted(times) == tuple(times):
+                    newz = dict(zip(ordernodes, times))
+                    probs.append(prob_model_given_data(SFTNet,\
+                            data, newz, T, lnf))
+            except StopIteration:
+                break
+    return probs

@@ -1,0 +1,14 @@
+"""
+Evaluates the integral by brute force by doing a Riemann
+sum to "infinity."  This is obviously inefficient and cannot be
+used for large nets but can be used to compare the accuracy of MCMC
+and importance sampling
+"""
+
+from testing_net import net
+from orderings import *
+from tools import pro
+orders = gen_orderings(net, {'A': 'infected'
+                             , 'B': 'normal', 'C': 'normal', 'D': 'normal'})
+
+orders = [orders[i] for i in xrange(len(orders)) if len(orders[i])==4]

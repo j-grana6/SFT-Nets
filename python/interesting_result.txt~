@@ -1,0 +1,3 @@
+Here is an interesting result of our likelihood test.  If the rate of non-infected message transmission does
+not depend on the state of the node, when there is not an attacker, we can compute the analytical difference.  Actually, no we can't 
+because we don't know how the "data" looks near the 

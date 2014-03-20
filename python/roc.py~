@@ -1,0 +1,74 @@
+from testing_net import net, net_clean
+from uniform_approx import uniform_samp
+from lhood_comps import MCMC_MH
+from tools import gen_data, prob_model_no_attacker 
+import numpy as np
+
+def get_roc_coords(seed, num_pos, num_neg, i_net, c_net,
+                   s0 = {'A': 'infected', 'B' : 'normal', 'C': 'normal', 'D': 'normal'},
+                   T=10000, uni_samp_size = 10000):
+    """
+    num_pos : int
+        Number pf infected nets in the sample
+
+    num_neg :
+        Number of clean nets to generate
+
+    i_net : SFTNet
+        The net instance with an attacker
+
+    c_net : SFTNet
+        The net instance without an attacker
+
+    s0 : dict
+       Initial state of the net when there is an attacker
+    
+    T : int
+        Observation Window
+
+    uni_samp_size : int
+        The sample size for each infection ordering in uniform sampling
+
+    """
+    np.random.seed(seed)
+    infected_lhoods = []
+    # Will store the lhood w attacker and lhood difference
+    clean_lhoods = []
+    for i in range(num_pos):
+        print  'i = ', i
+        data = gen_data(T, i_net, s0)
+        uni_res = uniform_samp(i_net, s0, uni_samp_size, T ,data)
+        p_no_attacker = prob_model_no_attacker(i_net, data, T)
+        infected_lhoods.append((uni_res[0], p_no_attacker))
+    for j in range(num_neg):
+        print 'j =', j
+        data = gen_data(T, c_net, dict(zip(c_net.node_names, ['normal'] * len(c_net.nodes))))
+        uni_res = uniform_samp(i_net, s0, uni_samp_size, T, data)
+        p_no_attacker = prob_model_no_attacker(i_net, data, T)
+        clean_lhoods.append((uni_res[0], p_no_attacker))
+
+    return infected_lhoods, clean_lhoods
+    
+def f(seed):
+    return get_roc_coords(seed, 25, 25, net, net_clean)
+
+if __name__ == '__main__':
+    from multiprocessing import Pool
+    P = Pool(4)
+    res = P.map(f, [1,2,3,4])
+
+    def plot_roc(infect_res, clean_res, lhood_ratio_step):
+        roc_pts = []
+        infect_res = np.asarray(infect_res)
+        infect_lhood_diff  = infect_res[1] - infect_res[0]
+        clean_res = np.asarray(clean_res)
+        clean_lhood_diff = clean_res[1] - clean_res[0]
+        threshmin = min( min(clean_lhood_diff), min(infect_lhood_diff))
+        threshmax = max( max(clean_lhood_diff), max(infect_lhood_diff))
+        for step in np.arange(threshmin, threshmax, lhood_ratio_step):
+            tps = np.sum(infect_lhood_diff > step)
+            tps_rate = float(tps) / float( len(infect_lhood_diff) )
+            fps = np.sum(clean_lhood_diff > step)
+            fps_rate = float(fps) / float( len ( clean_lhood_diff))
+            roc_pts.append((fps_rate, tps_rate, step))
+        return roc_pts

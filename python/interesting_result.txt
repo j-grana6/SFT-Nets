@@ -1,0 +1,19 @@
+Here is an interesting result of our likelihood test.  If the rate of non-infected message transmission does
+not depend on the state of the node, when there is not an attacker, we can compute the analytical difference.  Actually, no we can't 
+because we don't know how the "data" looks near the... unfinished, unimportant
+
+How to present ROC curves:
+
+In Ipython notebook :
+   Present net config
+       Need to change s0
+       Need to change num_sims_per_processor   
+   import from roc.py
+        Need to define f function
+	
+   run the functions
+        Need to reshape results
+   plot the results
+   save the data
+   repeat with new net configurations
+   
