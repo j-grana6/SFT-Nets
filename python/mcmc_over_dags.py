@@ -84,7 +84,8 @@ def MCMC_sequence(SFTNet, data, s0, N,  T, proposal_var=100, print_jumps=False, 
             z1[nd] = last_infect
             state[nd_ix] = 'infected'
         p1 = prob_mod(z1)
-        if (p1[2]  -p0[2] > np.log(np.random.random())):
+        #  Possible change to 2
+        if (p1[2] -p0[2] > np.log(np.random.random())):
             if print_jumps :
                 print 'A Jump at, ', n, 'to ', z1, 'with prob', p1, '\n'
             if switch_order:

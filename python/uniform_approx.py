@@ -115,7 +115,7 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
             # Number of infected nodes in the ordering.
         m = len(v) - numattackers
         #Normalizing constant.
-        nc = T ** m / factorial(m) * 1/.54450
+        nc = T ** m / factorial(m)
         # Average up the samples for this v.
         # Need to take out -inf's
         samples = np.asarray(samples)
