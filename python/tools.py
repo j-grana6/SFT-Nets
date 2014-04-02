@@ -4,6 +4,7 @@ import operator
 from scipy.stats import poisson, norm
 import pandas as pd
 
+
 def gen_data(T, SFTNet, t0):
     """
 
@@ -48,6 +49,8 @@ def gen_data(T, SFTNet, t0):
     for s in range(len(state)):
         SFTNet.nodes[s].state = state[s]
     state_change = 0
+    state_ix = SFTNet.cross_S.index(state)
+    t_rates = SFTNet.transmission_mats[state_ix]
     while t < T:
         if t == 0 or state_change == 1:
             # If we are just starting, get the correct
@@ -61,8 +64,8 @@ def gen_data(T, SFTNet, t0):
             t_rates = SFTNet.transmission_mats[state_ix]
             # The transmission matrix that corresponds
             # to that state.
-        r_rate = np.sum(t_rates)
-        # Reaction rate
+            r_rate = np.sum(t_rates)
+            # Reaction rate
         t += np.random.exponential(scale=1 / r_rate)
         if t > T:
             break
@@ -446,3 +449,50 @@ def trunc_expon(rate, truncation):
     
     R = np.random.random()*(1-np.exp(-truncation*rate))
     return -np.log(1-R)*1./rate
+
+
+
+if __name__ =='__main__':
+    import numpy as np
+    #from direct_sample import Direct_Sample
+    from sft import SFT
+    from sft_net import SFTNet
+    import networkx as nx
+    from IPython.display import HTML
+    from tools import gen_trans_frame
+    from roc import get_roc_coords
+    A = SFT('A', ['normal' , 'infected'], ['B', 'F'], 
+    {'B': np.array([[.5, 0], [.5,.001]]), 'F' : np.array([[.5, 0], [.5, .001]])},
+    ['clean', 'malicious'], 'external')
+    # Node A sends messages to B and F
+
+    B = SFT('B', ['normal' , 'infected'], [ 'E'], 
+        {'E' : np.array([[2, 0], [2, .01]])},
+        ['clean', 'malicious'], 'internal')
+    # B sends messages to A, D and F
+    C = SFT('C', ['normal' , 'infected'], ['E'],
+        {'E': np.array([[.25, 0], [.25,.01]])},
+        ['clean', 'malicious'], 'internal')
+    # C sends messages to A, B and F
+
+
+    D = SFT('D', ['normal' , 'infected'], ['E'], 
+        {'E': np.array([[.8, 0], [.8,.01]])},
+        ['clean', 'malicious'], 'internal')
+    # D sends nodes to A, C and F
+
+    E = SFT('E', ['normal' , 'infected'], ['A', 'B', 'C', 'D', 'F'], 
+        {'A': np.array([[3, 0], [3,.001]]), 'B': np.array([[5,0], [5, .001]]), 
+         'C': np.array([[.5,0], [.5, .001]]), 'D' : np.array([[4, 0], [4, .001]]), 'F' : np.array([[.5, 0], [.5, .001]])},
+        ['clean', 'malicious'], 'internal')
+    # E (slowly) sends nodes to A, B, C and F
+
+    F = SFT('F', ['normal' , 'infected'], ['A', 'E'], 
+        {'A': np.array([[10, 0], [10,.01]]), 'E' : np.array([[.9, 0], [.9, .01]])},
+        ['clean', 'malicious'], 'external')
+    # F sends nodes to A and E
+
+    nodes_2 = [A, B,C,D,E,F]
+    net_2 = SFTNet(nodes_2)
+    s0_2 = {'A': 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal', 'E': 'normal', 'F': 'normal'}
+    gen_data(15000, net_2, s0_2)

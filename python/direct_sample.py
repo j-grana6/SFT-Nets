@@ -6,7 +6,7 @@ from itertools import chain
 
 
 
-def direct_sample(SFTNet, data, num_samples, T, s0):
+def Direct_Sample(SFTNet, data, num_samples, T, s0):
     net = copy.deepcopy(SFTNet)
     logn_fact = gen_logn_fact(data)
     n = 1
@@ -31,7 +31,7 @@ def direct_sample(SFTNet, data, num_samples, T, s0):
                 break
             at_risk_ix = [net.node_names.index(nd) for nd in at_risk]
             mt_rates = np.sum(net.mal_trans_mats[state_ix][:, at_risk_ix], axis=0)
-            print at_risk, mt_rates, infected, n
+            #print at_risk, mt_rates, infected, n
             r_rate = np.sum(mt_rates)
             t += np.random.exponential(scale=1/r_rate)
             if t<T:
@@ -39,7 +39,7 @@ def direct_sample(SFTNet, data, num_samples, T, s0):
                 times[next_infected] = t
                 nd_ix = net.node_names.index(next_infected)
                 state[nd_ix] = 'infected'
-        print times, n
+        #print times, n
         probs.append(prob_mod(times)[1])
         n+=1
     e_probs = np.exp(probs)

@@ -5,10 +5,10 @@ from lhood_comps import MCMC_MH
 from tools import gen_data, prob_model_no_attacker 
 import numpy as np
 from mcmc_over_dags import MCMC_sequence
-from direct_sample import direct_sample
+from direct_sample import Direct_Sample
 
 def get_roc_coords(seed, num_pos, num_neg, i_net,s0,
-                   method = 'direct_sample', T=10000, uni_samp_size = 2000, mcmc_steps =5000, directsamps=1000,
+                   method = 'Direct_Sample', T=10000, uni_samp_size = 2000, mcmc_steps =5000, directsamps=1000,
                    burnin_rate = .25, printsteps=False):
     """
     num_pos : int
@@ -45,7 +45,7 @@ def get_roc_coords(seed, num_pos, num_neg, i_net,s0,
             mh_res = MCMC_sequence(i_net, data, s0, mcmc_steps, T , print_jumps=False)
             res = mh_res.calc_log_likelihood(burnin=int(burnin_rate * mcmc_steps))
         else:
-            res = direct_sample(i_net, data, directsamps, T, s0)[0]
+            res = Direct_Sample(i_net, data, directsamps, T, s0)[0]
         p_no_attacker = prob_model_no_attacker(i_net, data, T)
         # infected_lhoods.append((uni_res[0], p_no_attacker))
         infected_lhoods.append((res, p_no_attacker))
@@ -59,7 +59,7 @@ def get_roc_coords(seed, num_pos, num_neg, i_net,s0,
             mh_res = MCMC_sequence(i_net, data, s0, mcmc_steps, T, print_jumps=False)
             res = mh_res.calc_log_likelihood(burnin=int(burnin_rate * mcmc_steps))
         else:
-            res = direct_sample(i_net, data, directsamps, T, s0)[0]
+            res = Direct_Sample(i_net, data, directsamps, T, s0)[0]
         p_no_attacker = prob_model_no_attacker(i_net, data, T)
         
         clean_lhoods.append((res, p_no_attacker))
