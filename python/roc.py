@@ -65,9 +65,10 @@ def get_roc_coords(seed, num_pos, num_neg, i_net,s0,
         clean_lhoods.append((res, p_no_attacker))
     return infected_lhoods, clean_lhoods
     
-def handle_parallel_res(res, numcores=4):
+def handle_parallel_res(res, numcores=None):
     pos = []
     neg = []
+    numcores = len(res)
     for i in range(numcores):
         pos.append(res[i][0])
         neg.append(res[i][1])
