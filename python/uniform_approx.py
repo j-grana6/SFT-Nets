@@ -105,7 +105,7 @@ def uniform_samp(SFTnet,s0,samp_size,T, data):
                 zvec = copy.copy(zvec0)
                 # Calculate P(data | z, attacker) and P(z | attacker)
                 # given data.
-            probs = prob_model_given_data(SFTnet,data,zvec,T,logn_fact)
+            probs = prob_model_given_data(SFTnet,data,zvec,T,logn_fact, s0)
             pz_a = probs[0]; pd_za = probs[1]
             # Combine them to get P(data | attacker)
             pd_a = pd_za + pz_a
