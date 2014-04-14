@@ -49,8 +49,7 @@ def gen_data(T, SFTNet, t0):
     for s in range(len(state)):
         SFTNet.nodes[s].state = state[s]
     state_change = 0
-    state_ix = SFTNet.cross_S.index(state)
-    t_rates = SFTNet.transmission_mats[state_ix]
+    t_rates = SFTNet.get_all_trans()
     while t < T:
         if t == 0 or state_change == 1:
             # If we are just starting, get the correct
@@ -59,9 +58,8 @@ def gen_data(T, SFTNet, t0):
             # If the state of the system didn't change.
             # use the same transmission rate and skip
             # this block.
-            state_ix = SFTNet.cross_S.index(state)
             # Get the index of the state of the net
-            t_rates = SFTNet.transmission_mats[state_ix]
+            t_rates = SFTNet.get_all_trans()
             # The transmission matrix that corresponds
             # to that state.
             r_rate = np.sum(t_rates)
@@ -133,7 +131,7 @@ def gen_data(T, SFTNet, t0):
 
 
 
-def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: Profile this
+def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact, s0):  ## TODO: Profile this
     """
     Returns a tuple whose first element is P(z | attacker) and the
     second element is P(data | z, attacker).
@@ -163,6 +161,7 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
     eps = 0
     transmissions = data[-2]
     # First order the infections
+    attackers = [nd for nd in s0.keys() if s0[nd] =='infected']
     sorted_infect = sorted(infect_times.iteritems(),
                            key=operator.itemgetter(1))
     if min(infect_times.values()) < 0:
@@ -170,13 +169,17 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
     not_infected = [nd for nd in SFTNet.node_names \
                     if nd not in infect_times.keys()]
     # Creates a list of tuples and then sorts by the value
-    state = ['infected'] + (len(SFTNet.nodes) - 1) * ['normal']
     # Assuming the first node in SFTNet.nodes is infected.
     # This can be generalized to any initial condition state
+    for nd in SFTNet.nodes:
+        if nd.name in attackers:
+            nd.state='infected'
+        else:
+            nd.state='normal'
     prob_sequence = 0
     prob_exact_times = 0
     time_minus_1 = 0
-    for node, time in sorted_infect[1:]:
+    for node, time in sorted_infect[len(attackers):]:
         # TODO IMPORTANT.  Generalize to be able to specify intial
         # infected node.  
         ### Here we need to control for the fact that we only
@@ -186,14 +189,14 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
         ### The p exact time is ok
         infect_ix = SFTNet.node_names.index(node)
         # The index of the node that gets infected
-        cross_S_ix = SFTNet.cross_S.index(state)
         # The state of the net when the node gets infected
-        mal_trans = SFTNet.mal_trans_mats[cross_S_ix]
+        mal_trans = SFTNet.get_mal_trans()
         # The transmission matrix of malicious messages given config
         prob_node = np.sum(mal_trans[:, infect_ix])
         # The (relative) probability that the node
         # is infected by any other node
-        prob_total = np.sum(mal_trans[:, np.asarray(state) == 'normal'])
+        prob_total = np.sum(mal_trans[:,
+                np.asarray(SFTNet.get_state()) == 'normal'])
         # Only the nodes that are not already infected can become
         # infected.
         prob_sequence += np.log(prob_node + eps) - \
@@ -205,7 +208,7 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
             deltat * prob_total
         # Update the probability of the specific times.  We use deltat
         # because of the memoryless property of the process.
-        state[infect_ix] = 'infected'
+        SFTNet.node_dict[node].state = 'infected'
         time_minus_1 = time
         ## The above loop combines the first 2 functions of Munsky's
         ## matlab code.
@@ -215,9 +218,8 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact):  ## TODO: P
     for node in not_infected:
         infect_ix = SFTNet.node_names.index(node)
         # The index of the node that gets infected
-        cross_S_ix = SFTNet.cross_S.index(state)
         # The state of the net when the node gets infected
-        mal_trans = SFTNet.mal_trans_mats[cross_S_ix]
+        mal_trans = SFTNet.get_mal_trans() 
         # The transmission matrix of malicious messages given config
         prob_node = np.sum(mal_trans[:, infect_ix])
         # This is the sum of all of the rate constants connected to the node
@@ -452,47 +454,47 @@ def trunc_expon(rate, truncation):
 
 
 
-if __name__ =='__main__':
-    import numpy as np
-    #from direct_sample import Direct_Sample
-    from sft import SFT
-    from sft_net import SFTNet
-    import networkx as nx
-    from IPython.display import HTML
-    from tools import gen_trans_frame
-    from roc import get_roc_coords
-    A = SFT('A', ['normal' , 'infected'], ['B', 'F'], 
-    {'B': np.array([[.5, 0], [.5,.001]]), 'F' : np.array([[.5, 0], [.5, .001]])},
-    ['clean', 'malicious'], 'external')
-    # Node A sends messages to B and F
+# if __name__ =='__main__':
+    # import numpy as np
+    # #from direct_sample import Direct_Sample
+    # from sft import SFT
+    # from sft_net import SFTNet
+    # import networkx as nx
+    # from IPython.display import HTML
+    # from tools import gen_trans_frame
+    # from roc import get_roc_coords
+    # A = SFT('A', ['normal' , 'infected'], ['B', 'F'], 
+    # {'B': np.array([[.5, 0], [.5,.001]]), 'F' : np.array([[.5, 0], [.5, .001]])},
+    # ['clean', 'malicious'], 'external')
+    # # Node A sends messages to B and F
 
-    B = SFT('B', ['normal' , 'infected'], [ 'E'], 
-        {'E' : np.array([[2, 0], [2, .01]])},
-        ['clean', 'malicious'], 'internal')
-    # B sends messages to A, D and F
-    C = SFT('C', ['normal' , 'infected'], ['E'],
-        {'E': np.array([[.25, 0], [.25,.01]])},
-        ['clean', 'malicious'], 'internal')
-    # C sends messages to A, B and F
+    # B = SFT('B', ['normal' , 'infected'], [ 'E'], 
+    #     {'E' : np.array([[2, 0], [2, .01]])},
+    #     ['clean', 'malicious'], 'internal')
+    # # B sends messages to A, D and F
+    # C = SFT('C', ['normal' , 'infected'], ['E'],
+    #     {'E': np.array([[.25, 0], [.25,.01]])},
+    #     ['clean', 'malicious'], 'internal')
+    # # C sends messages to A, B and F
 
 
-    D = SFT('D', ['normal' , 'infected'], ['E'], 
-        {'E': np.array([[.8, 0], [.8,.01]])},
-        ['clean', 'malicious'], 'internal')
-    # D sends nodes to A, C and F
+    # D = SFT('D', ['normal' , 'infected'], ['E'], 
+    #     {'E': np.array([[.8, 0], [.8,.01]])},
+    #     ['clean', 'malicious'], 'internal')
+    # # D sends nodes to A, C and F
 
-    E = SFT('E', ['normal' , 'infected'], ['A', 'B', 'C', 'D', 'F'], 
-        {'A': np.array([[3, 0], [3,.001]]), 'B': np.array([[5,0], [5, .001]]), 
-         'C': np.array([[.5,0], [.5, .001]]), 'D' : np.array([[4, 0], [4, .001]]), 'F' : np.array([[.5, 0], [.5, .001]])},
-        ['clean', 'malicious'], 'internal')
-    # E (slowly) sends nodes to A, B, C and F
+    # E = SFT('E', ['normal' , 'infected'], ['A', 'B', 'C', 'D', 'F'], 
+    #     {'A': np.array([[3, 0], [3,.001]]), 'B': np.array([[5,0], [5, .001]]), 
+    #      'C': np.array([[.5,0], [.5, .001]]), 'D' : np.array([[4, 0], [4, .001]]), 'F' : np.array([[.5, 0], [.5, .001]])},
+    #     ['clean', 'malicious'], 'internal')
+    # # E (slowly) sends nodes to A, B, C and F
 
-    F = SFT('F', ['normal' , 'infected'], ['A', 'E'], 
-        {'A': np.array([[10, 0], [10,.01]]), 'E' : np.array([[.9, 0], [.9, .01]])},
-        ['clean', 'malicious'], 'external')
-    # F sends nodes to A and E
+    # F = SFT('F', ['normal' , 'infected'], ['A', 'E'], 
+    #     {'A': np.array([[10, 0], [10,.01]]), 'E' : np.array([[.9, 0], [.9, .01]])},
+    #     ['clean', 'malicious'], 'external')
+    # # F sends nodes to A and E
 
-    nodes_2 = [A, B,C,D,E,F]
-    net_2 = SFTNet(nodes_2)
-    s0_2 = {'A': 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal', 'E': 'normal', 'F': 'normal'}
-    gen_data(15000, net_2, s0_2)
+    # nodes_2 = [A, B,C,D,E,F]
+    # net_2 = SFTNet(nodes_2)
+    # s0_2 = {'A': 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal', 'E': 'normal', 'F': 'normal'}
+    # gen_data(15000, net_2, s0_2)
