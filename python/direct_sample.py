@@ -1,5 +1,5 @@
 import numpy as np
-from testing_net import net
+#from testing_net import net
 import copy
 from tools import prob_model_given_data, gen_logn_fact, prob_model_no_attacker
 from itertools import chain
