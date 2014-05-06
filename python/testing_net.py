@@ -26,7 +26,8 @@ Cnew = SFTnew('C', ['normal', 'infected'], ['D'],
 Dnew = SFTnew('D', ['normal', 'infected'], [], {}, [], 'internal')
 
 
-T=10000
+T = 10000
+t0 = {'A':'infected','B':'normal','C':'normal','D':'normal'}
 nodes = [Anew, Bnew, Cnew, Dnew]
 net = SFTNetnew(nodes)
 
