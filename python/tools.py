@@ -272,7 +272,8 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact, s0):  ## TOD
                 num_after = len(transmissions[node+'-'+o_node]) - num_before
                 # Number of reactions after infection
                 if num_before == 0 :
-                    prob_before = 0
+                    prob_before = - np.sum(_node_inst.rates[o_node][norm_ix, :]) * \
+                                    min(T, time)
                 else:
                     prob_before = (num_before *
                             np.log(eps +
@@ -294,7 +295,8 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact, s0):  ## TOD
                 # the factorial instead of his function.  We will see if this is
                 # a significant bottle neck later.
                 if num_after == 0:
-                    prob_after = 0
+                    prob_after = - np.sum(_node_inst.rates[o_node][infect_ix, :]) * \
+                            (T-time)
                 else:
                     prob_after = ( num_after *
                             np.log(eps +
