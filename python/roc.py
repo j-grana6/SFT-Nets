@@ -7,7 +7,7 @@ import numpy as np
 from mcmc_over_dags import MCMC_sequence
 from direct_sample import Direct_Sample
 
-def get_roc_coords(seed, num_pos, num_neg, i_net,s0,
+def get_roc_coords(seed, num_pos, num_neg, i_net,s0, truenet=None,
                    method = 'Direct_Sample', T=10000, uni_samp_size = 2000, mcmc_steps =5000, directsamps=1000,
                    burnin_rate = .25, printsteps=False):
     """
@@ -31,6 +31,8 @@ def get_roc_coords(seed, num_pos, num_neg, i_net,s0,
         The sample size for each infection ordering in uniform sampling
 
     """
+    if truenet == None:
+        truenet = i_net
     np.random.seed(seed)
     infected_lhoods = []
     # Will store the lhood w attacker and lhood difference
@@ -38,7 +40,7 @@ def get_roc_coords(seed, num_pos, num_neg, i_net,s0,
     for i in range(num_pos):
         if printsteps:
             print 'i= ', i
-        data = gen_data(T, i_net, s0)
+        data = gen_data(T, truenet, s0)
         if method == 'uniform' :
             res = uniform_samp(i_net, s0, uni_samp_size, T, data)[0]
         elif method == 'mcmc' :
@@ -52,7 +54,7 @@ def get_roc_coords(seed, num_pos, num_neg, i_net,s0,
     for j in range(num_neg):
         if printsteps:
             print 'j =', j
-        data = gen_data(T, i_net, dict(zip(i_net.node_names, ['normal'] * len(i_net.nodes))))
+        data = gen_data(T, truenet, dict(zip(i_net.node_names, ['normal'] * len(i_net.nodes))))
         if method == 'uniform':
             res = uniform_samp(i_net, s0, uni_samp_size, T, data)[0]
         elif method=='mcmc' :
