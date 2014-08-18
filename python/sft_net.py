@@ -148,8 +148,8 @@ class SFTNet(object):
                     clean_r.append(0)
                     mal_r.append(0)
                     inf_r.append(0)
-            clean_rates[nd.name] =clean_r
-            mal_rates[nd.name] = mal_r
+            clean_rates[nd.name] = clean_r
+            mal_rates[nd.name] =  mal_r
             inf_rates[nd.name] = inf_r
             
         self.clean_trans = clean_rates
