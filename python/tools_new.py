@@ -59,17 +59,24 @@ def gen_data(T, SFTNet, t0):
             # use the same transmission rate and skip
             # this block.
             # Get the index of the state of the net
-            t_rates = SFTNet.get_all_trans()
+            unadj_t_rates = SFTNet.get_all_trans()
+            mal_rates = SFTNet.get_mal_trans()
+            c_rates = unadj_t_rates - mal_rates
+            ### Below we are going to account for
+            ### attackers not sending messages to already
+            ### infected nodes.
+            I_mat = np.identity(c_rates.shape[0])
+            for nd_ix in range(len(SFTNet.nodes)):
+                if state[nd_ix]=='infected':
+                    I_mat[nd_ix, nd_ix] =0
+            t_rates = c_rates + np.dot(mal_rates, I_mat)
             # The transmission matrix that corresponds
             # to that state.
             r_rate = np.sum(t_rates)
             # Reaction rate
-        t += np.random.exponential(scale=1 / r_rate)
-        if t > T:
+        t_temp = t + np.random.exponential(scale=1 / r_rate)
+        if t_temp > T:
             break
-        reaction_times.append(t)
-        # Draw the next time and append.
-        # Marginally faster than t - log(random.random())/r_rate
         draw = r_rate*np.random.random()
         # Random number to determine sender and receiver
         reaction_ix = np.argmin(np.cumsum(t_rates) < draw)
@@ -88,24 +95,32 @@ def gen_data(T, SFTNet, t0):
         sndr_state_ix = sender.states.index(state[sender_ix])
         # What state is the sender in (from which sending distribution
         # do we draw?)
-        msg_distribution = np.cumsum(sender.rates[receiver.name][sndr_state_ix])
-        msg_ix = np.argmin(msg_distribution <
-                            np.random.random() * msg_distribution[-1])
-        # Determine the index of the message to send
-        # Note that this data generating algorithm calls 2 random numbers.
-        # One to determine the sender-receiver and the other to determine
-        # the message to send.  Theoretically, these steps can be combined
-        # and we can use only 1 random number.
-        msg = sender.messages[msg_ix]
-        # The message string
         reaction_sender.append(sender.name)
         reaction_receiver.append(receiver.name)
+        t = t_temp
+        if receiver.state =='infected':
+            msg = 'clean'
+        else:
+            msg_distribution = np.cumsum(sender.rates[receiver.name][sndr_state_ix])
+            msg_ix = np.argmin(msg_distribution <
+                            np.random.random() * msg_distribution[-1])
+            # Determine the index of the message to send
+            # Note that this data generating algorithm calls 2 random numbers.
+            # One to determine the sender-receiver and the other to determine
+            # the message to send.  Theoretically, these steps can be combined
+            # and we can use only 1 random number.
+            msg = sender.messages[msg_ix]
+            # The message string
         msgs_sent.append(msg)
         # Record the transmission
         receiver.react(msg, sender.name)
+        reaction_times.append(t)
+            # Draw the next time and append.
+            # Marginally faster than t - log(random.random())/r_rate
+        n_reactions += 1
         if state == SFTNet.get_state():
-            # If the message is not malicious or the node was already
-            # infected, this will hold.
+        # If the message is not malicious or the node was already
+        # infected, this will hold.
             state_change = 0
         else:
             # The only time this happens is if a node gets infected
@@ -113,8 +128,7 @@ def gen_data(T, SFTNet, t0):
             infect_times[receiver.name] = t
             # Dictionary
             state = SFTNet.get_state()
-            # Update state
-        n_reactions += 1
+        # Update state
     transmissions = {}
     for node in SFTNet.nodes:
         for o_node in node.sends_to:
@@ -134,7 +148,7 @@ def gen_data(T, SFTNet, t0):
 def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact, s0):  ## TODO: Profile this
     """
     Returns a tuple whose first element is P(z | attacker) and the
-    second element is P(data | z, attacker).
+    second element is P(data | z, attacker).  Note the function is misnamed.
 
     Parameters
     ----------
@@ -330,6 +344,30 @@ def prob_model_no_attacker(SFTnet, data, T):
             total_prob += logprob
     return total_prob
 
+def get_alarm_time(SFTnet, data, T, window, lp_limit):
+    """
+    This is hackish and can definitely be improved
+    """
+    alarm_sounds =False
+    leading_ix = np.argmax(np.asarray(data[1])>= window)
+    while not alarm_sounds:
+        d= [0,0] #This is a placeholder so I can easily use
+                 # p_model_no_attacker function
+        trailing_ix = np.argmax(data[1] > data[1][leading_ix]-window)
+        d.append(data[2][trailing_ix:leading_ix])
+        d.append(data[3][trailing_ix:leading_ix])
+        p_window = prob_model_no_attacker(SFTnet, d, window)
+        print p_window
+        if p_window < lp_limit:
+            alarm_sounds = True
+        else:
+            leading_ix +=1
+        if leading_ix >= len(data[1]):
+            alarm_sounds=True
+            return T
+    return data[1][leading_ix]
+        
+    
 
 ## I'm pretty sure we can delete this stuff, we found a better way
 ## to construct a proposal distribution
@@ -392,24 +430,24 @@ def prob_model_no_attacker(SFTnet, data, T):
 #     return (norm.cdf((x-a)/sigma) - norm.cdf((x-b)/sigma))/ (b - a)
 
 
-def rhs_integral(SFTNet, data, T):
-    """
-    Returns \int_T^\infty P(d|z, attacker)P(z|attacker)
-    *Not* the log.
-    """
-    data_greater_t = {node.name: T+1 for node in SFTNet.nodes}
-    data_greater_t['A'] = 0 # Keep initially infected
-    p_data = prob_model_given_data(SFTNet, data, data_greater_t,T,
-                                   gen_logn_fact(data))[1]
-    prob_z = 0
-    for node in SFTNet.nodes:
-        for rec in node.sends_to:
-            if node.location =='external':
-                infect_ix = node.states.index('infected')
-                mal_ix = node.messages.index('malicious')
-                rate = node.rates[rec][infect_ix, mal_ix]
-                prob_z += -rate * T
-    return np.exp(p_data + prob_z)
+# def rhs_integral(SFTNet, data, T):
+#     """
+#     Returns \int_T^\infty P(d|z, attacker)P(z|attacker)
+#     *Not* the log.
+#     """
+#     data_greater_t = {node.name: T+1 for node in SFTNet.nodes}
+#     data_greater_t['A'] = 0 # Keep initially infected
+#     p_data = prob_model_given_data(SFTNet, data, data_greater_t,T,
+#                                    gen_logn_fact(data))[1]
+#     prob_z = 0
+#     for node in SFTNet.nodes:
+#         for rec in node.sends_to:
+#             if node.location =='external':
+#                 infect_ix = node.states.index('infected')
+#                 mal_ix = node.messages.index('malicious')
+#                 rate = node.rates[rec][infect_ix, mal_ix]
+#                 prob_z += -rate * T
+#     return np.exp(p_data + prob_z)
 
 def gen_logn_fact(data):
     return np.hstack((np.zeros(1), np.cumsum(np.log(np.arange(1, len(data[0])+2,1)))))
@@ -441,18 +479,18 @@ def gen_trans_frame(net):
             df.set_value((nd.name, o_node), 'infected-malicious rate', nd.rates[o_node][infstate_ix, malmsg_ix])
     return df
 
-def trunc_expon(rate, truncation):
-    """
-    rate :
-        the rate
+# def trunc_expon(rate, truncation):
+#     """
+#     rate :
+#         the rate
 
-    truncation :
-        truncation time
-    """
-    rate = float(rate)
+#     truncation :
+#         truncation time
+#     """
+#     rate = float(rate)
     
-    R = np.random.random()*(1-np.exp(-truncation*rate))
-    return -np.log(1-R)*1./rate
+#     R = np.random.random()*(1-np.exp(-truncation*rate))
+#     return -np.log(1-R)*1./rate
 
 
 

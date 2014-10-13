@@ -1,7 +1,7 @@
 """
 An OO approach to SFT's
 """
-
+import numpy as np
 
 class SFT(object):
     """
@@ -70,7 +70,7 @@ class SFT(object):
     """
 
 
-    def __init__(self, name, states, sends_to, rates, messages, location):
+    def __init__(self, name, states, sends_to, rates, messages, location, pi_st=1):
         ## TODO Get infect_ix and malicious_ix here
         self.name = name
         self.states = states
@@ -79,10 +79,13 @@ class SFT(object):
         self.messages = messages
         self.state = None
         self.location = location
+        self.pi_st = pi_st
 
     def react(self, message, source):
         if message.lower() == 'malicious':
-            self.state = 'infected'
+            if self.state != 'infected' :
+                if np.random.random() < self.pi_st :
+                    self.state = 'infected'
     #  This is obviously not general but is the case for the
     #  cyber project.  Ideally, it would be a draw from
     #  pi-sp given message, source and state.
