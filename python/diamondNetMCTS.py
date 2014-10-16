@@ -202,7 +202,7 @@ class DiamondNetMCTS(object):
 
 if __name__ == '__main__':
     default_policy = dict(ab = 0.25, ac = 0.25, bd = 0.15, cd = 0.15)
-    test = DiamondNetMCTS(0.05,0.02,0.01,0.5,0.5,0.3,0.3,50,5e-6,1,default_policy,5)
+    test = DiamondNetMCTS(0.05,0.02,0.01,0.5,0.5,0.3,0.3,50,1e-6,1,default_policy,5)
     y = test.search()
     
     plt.plot(y[1],label = 'Send to Neither')
