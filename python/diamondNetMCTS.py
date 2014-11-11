@@ -23,13 +23,13 @@ class DiamondNetMCTS(object):
         self.dp = default_policy
         self.gamma = gamma
         self.c = c
-    def compute_prob(self,kab,kac,kbd,kcd):
+    def compute_log_prob(self,kab,kac,kbd,kcd):
         prob_ab = binomial(self.w,kab) * (self.qab**kab) * ((1-self.qab)**(self.w-kab))
         prob_ac = binomial(self.w,kac) * (self.qac**kac) * ((1-self.qac)**(self.w-kac))
         prob_bd = binomial(self.w,kbd) * (self.qbd**kbd) * ((1-self.qbd)**(self.w-kbd))
         prob_cd = binomial(self.w,kcd) * (self.qcd**kcd) * ((1-self.qcd)**(self.w-kcd))
         joint = prob_ab * prob_ac * prob_bd * prob_cd
-        return joint
+        return np.log(float(joint))
     def draw_s0(self):
         alarm = True
         while alarm == True:
@@ -41,7 +41,7 @@ class DiamondNetMCTS(object):
             kac = np.sum(s0_ac)
             kbd = np.sum(s0_bd)
             kcd = np.sum(s0_cd)
-            alarm = (self.compute_prob(kab,kac,kbd,kcd) < self.threshold)
+            alarm = (self.compute_log_prob(kab,kac,kbd,kcd) < self.threshold)
         s0 = dict(ab = s0_ab, ac = s0_ac, bd = s0_bd, cd = s0_cd)
         return s0
     def draw_s_o_r(self,s0,actions,infected_nodes):
@@ -50,10 +50,10 @@ class DiamondNetMCTS(object):
         newstate['ac'] = s0['ac'][1:]
         newstate['bd'] = s0['bd'][1:]
         newstate['cd'] = s0['cd'][1:]
-        bgm_ab = int(random.random() < self.qab)
-        bgm_ac = int(random.random() < self.qac)
-        bgm_bd = int(random.random() < self.qbd)
-        bgm_cd = int(random.random() < self.qcd)
+        bgm_ab = int(np.random.random() < self.qab)
+        bgm_ac = int(np.random.random() < self.qac)
+        bgm_bd = int(np.random.random() < self.qbd)
+        bgm_cd = int(np.random.random() < self.qcd)
         newstate['ab'].append(bgm_ab + actions['ab'])
         newstate['ac'].append(bgm_ac + actions['ac'])
         newstate['bd'].append(bgm_bd + actions['bd'])
@@ -62,31 +62,31 @@ class DiamondNetMCTS(object):
         kac = np.sum(newstate['ac'])
         kbd = np.sum(newstate['bd'])
         kcd = np.sum(newstate['cd'])
-        if self.compute_prob(kab,kac,kbd,kcd) < self.threshold:
+        if self.compute_log_prob(kab,kac,kbd,kcd) < self.threshold:
             newstate = 'Alarm'
         else:
             if infected_nodes == ['A']:
                 assert actions['bd'] == actions['cd'] == 0
-                if random.random() * actions['ab'] > 1 - self.pb:
+                if np.random.random() * actions['ab'] > 1 - self.pb:
                     infected_nodes.append('B')
-                if random.random() * actions['ac'] > 1 - self.pc:
+                if np.random.random() * actions['ac'] > 1 - self.pc:
                     infected_nodes.append('C')
             elif infected_nodes == ['A','B']:
                 assert actions['cd'] == 0
-                if random.random() * actions['ac'] > 1 - self.pc:
+                if np.random.random() * actions['ac'] > 1 - self.pc:
                     infected_nodes.append('C')
-                if random.random() * actions['bd'] > 1 - self.pd:
+                if np.random.random() * actions['bd'] > 1 - self.pd:
                     newstate = 'Infected'
             elif infected_nodes == ['A','C']:
                 assert actions['bd'] == 0
-                if random.random() * actions['ab'] > 1 - self.pb:
+                if np.random.random() * actions['ab'] > 1 - self.pb:
                     infected_nodes.insert(1,'B')
-                if random.random() * actions['cd'] > 1 - self.pd:
+                if np.random.random() * actions['cd'] > 1 - self.pd:
                     newstate = 'Infected'
             elif infected_nodes == ['A','B','C']:
-                if random.random() * actions['bd'] > 1 - self.pd:
+                if np.random.random() * actions['bd'] > 1 - self.pd:
                     newstate = 'Infected'
-                if random.random() * actions['cd'] > 1 - self.pd:
+                if np.random.random() * actions['cd'] > 1 - self.pd:
                     newstate = 'Infected'
         return newstate,infected_nodes
     def rollout(self,s,h):
@@ -97,13 +97,13 @@ class DiamondNetMCTS(object):
         infected_nodes = deepcopy(h['infect'][-1])
         actions = dict(ab = 0, ac = 0, bd = 0, cd = 0)
         if 'B' not in infected_nodes:
-            actions['ab'] = int(random.random() < self.dp['ab'])
+            actions['ab'] = int(np.random.random() < self.dp['ab'])
         if 'C' not in infected_nodes:
-            actions['ac'] = int(random.random() < self.dp['ac'])
+            actions['ac'] = int(np.random.random() < self.dp['ac'])
         if 'B' in infected_nodes:
-            actions['bd'] = int(random.random() < self.dp['bd'])
+            actions['bd'] = int(np.random.random() < self.dp['bd'])
         if 'C' in infected_nodes:
-            actions['cd'] = int(random.random() < self.dp['cd'])
+            actions['cd'] = int(np.random.random() < self.dp['cd'])
         newstate,infc = self.draw_s_o_r(s,actions,infected_nodes)
         h['act'].append(actions)
         h['infect'].append(deepcopy(infc))
@@ -181,29 +181,44 @@ class DiamondNetMCTS(object):
             return R,T
         else:
             return R
-    def search(self,num_samps = 50000):
+    def search_0(self,num_samps=30000):
+        T = {}
         history0 = dict(act = [{'ab':0,'ac':0,'bd':0,'cd':0}], infect = [['A']])
-        nosend = []
-        to_b = []
-        to_c = []
-        to_bc = []
-        for i in xrange(num_samps):
+        V0,Vab,Vac,Vabac = [],[],[],[]
+        for i in range(num_samps):
             print i
             s0 = self.draw_s0()
-            r,T = self.simulate(s0,deepcopy(history0),returnT = True)
+            r,T = self.simulate(s0,deepcopy(history0),T=T,returnT = True)
             t0 = T[str(history0)]
-            nosend.append(t0['[]'][0])
-            to_b.append(t0['ab'][0])
-            to_c.append(t0['ac'][0])
-            to_bc.append(t0['ab ac'][0])
-        return T,nosend,to_b,to_c,to_bc
+            V0.append(t0['[]'][0])
+            Vab.append(t0['ab'][0])
+            Vac.append(t0['ac'][0])
+            Vabac.append(t0['ab ac'][0])
+        return T,V0,Vab,Vac,Vabac
+    def search_1_1(self,num_samps=30000):
+        T = {}
+        history1_1 = dict(act = [{'ab':0,'ac':0,'bd':0,'cd':0}, {'ab':0,'ac':1,'bd':0,'cd':0}], 
+                infect = [['A'],['A','C']])
+        V0,Vab,Vcd,Vabcd = [],[],[],[]
+        for i in range(num_samps):
+            print i
+            s0 = self.draw_s0()
+            r,T = self.simulate(s0,deepcopy(history1_1),T=T,returnT = True)
+            t0 = T[str(history1_1)]
+            V0.append(t0['[]'][0])
+            Vab.append(t0['ab'][0])
+            Vcd.append(t0['cd'][0])
+            Vabcd.append(t0['ab cd'][0])
+        return T,V0,Vab,Vcd,Vabcd
 
+        
 
 
 if __name__ == '__main__':
-    default_policy = dict(ab = 0.25, ac = 0.25, bd = 0.15, cd = 0.15)
-    test = DiamondNetMCTS(0.05,0.02,0.01,0.5,0.5,0.3,0.3,50,1e-6,1,default_policy,5)
-    y = test.search()
+    default_policy = dict(ab = 0.5, ac = 0.5, bd = 0.5, cd = 0.5)
+    test = DiamondNetMCTS(0.1,0.1,0.05,0.5,0.5,0.3,0.3,50,-25,1,default_policy,5)
+    np.random.seed(24000)
+    y = test.search_0()
     
     plt.plot(y[1],label = 'Send to Neither')
     plt.plot(y[2],label = 'Send to B')

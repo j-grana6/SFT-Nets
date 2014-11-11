@@ -1,0 +1,9 @@
+#BSUB -J 8node
+#BSUB -q normal
+#BSUB -oo 8node.out
+#BSUB -eo 8node.err
+#BSUB -n=1
+#BSUB -u dx4348a@american.edu
+#BSUB -N
+
+/app/canopy/bin/python test_generalized_discrete_MCTS.py
