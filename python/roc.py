@@ -1,5 +1,5 @@
 from biggernet import net as bignet
-from testing_net import net as briansnet
+#from testing_net import net as briansnet
 from uniform_approx import uniform_samp
 from lhood_comps import MCMC_MH
 from tools import gen_data, prob_model_no_attacker 
@@ -138,29 +138,29 @@ def clean_res(results, percore,numcores=4):
     neg = neg.reshape(percore * 4,2)
     return pos, neg
     
-if __name__ == '__main__':
-    percore =1
-    s0 = {'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'} 
-    def f(seed):
-        return get_roc_coords(seed, percore, percore, briansnet, s0=s0, T=10000, printsteps=True)
+# if __name__ == '__main__':
+#     percore =1
+#     s0 = {'A' : 'infected', 'B': 'normal', 'C': 'normal', 'D': 'normal'} 
+#     def f(seed):
+#         return get_roc_coords(seed, percore, percore, briansnet, s0=s0, T=10000, printsteps=True)
 
-    from multiprocessing import Pool
-    P = Pool(4)
-    res = P.map(f, [1,2,3,4])
-    pos = []
-    neg = []
-    for i in range(4):
-        pos.append(res[i][0])
-        neg.append(res[i][1])
-    pos = np.asarray(pos)
-    pos = pos.reshape(-1,2)
-    neg = np.asarray(neg)
-    neg = neg.reshape(-1,2)
+#     from multiprocessing import Pool
+#     P = Pool(4)
+#     res = P.map(f, [1,2,3,4])
+#     pos = []
+#     neg = []
+#     for i in range(4):
+#         pos.append(res[i][0])
+#         neg.append(res[i][1])
+#     pos = np.asarray(pos)
+#     pos = pos.reshape(-1,2)
+#     neg = np.asarray(neg)
+#     neg = neg.reshape(-1,2)
 
 
-    our_res = np.asarray(plot_our_roc(pos, neg, .5))
-    anom_res = np.asarray(plot_anomaly_roc(pos, neg,.5))
-    label = str(np.random.random())[2:5]
-    np.savetxt('./'+str(label) + 'our_roc.csv', our_res, delimiter = ',')
-    np.savetxt('./' + str(label) + 'anom_roc.csv', anom_res, delimiter =',')
+#     our_res = np.asarray(plot_our_roc(pos, neg, .5))
+#     anom_res = np.asarray(plot_anomaly_roc(pos, neg,.5))
+#     label = str(np.random.random())[2:5]
+#     np.savetxt('./'+str(label) + 'our_roc.csv', our_res, delimiter = ',')
+#     np.savetxt('./' + str(label) + 'anom_roc.csv', anom_res, delimiter =',')
 

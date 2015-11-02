@@ -1,3 +1,12 @@
+### THIS SCRIPT GENERATES DATA
+### such that the attacker does not
+### send messages to already infected nodes
+
+### It is different from our original ROC formulation
+### However, the prob_model function does not account for this.  In other words
+### I have not yet coded a way to compute the likelihood if the attacker stops
+### sending messages
+
 import numpy as np
 import copy
 import operator
@@ -349,15 +358,24 @@ def get_alarm_time(SFTnet, data, T, window, lp_limit):
     This is hackish and can definitely be improved
     """
     alarm_sounds =False
+    d = [0,0]
+    leading_ix = np.argmin(np.asarray(data[1]<=window))
+    trailing_ix = 0
+    d.append(data[2][trailing_ix:leading_ix])
+    d.append(data[3][trailing_ix:leading_ix])
+    p_window = prob_model_no_attacker(SFTnet, d, window)
+    if p_window < lp_limit:
+        return 0
     leading_ix = np.argmax(np.asarray(data[1])>= window)
     while not alarm_sounds:
         d= [0,0] #This is a placeholder so I can easily use
                  # p_model_no_attacker function
         trailing_ix = np.argmax(data[1] > data[1][leading_ix]-window)
+        #print leading_ix, trailing_ix
         d.append(data[2][trailing_ix:leading_ix])
         d.append(data[3][trailing_ix:leading_ix])
         p_window = prob_model_no_attacker(SFTnet, d, window)
-        print p_window
+        #print p_window
         if p_window < lp_limit:
             alarm_sounds = True
         else:
