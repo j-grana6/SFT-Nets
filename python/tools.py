@@ -308,189 +308,189 @@ def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact, s0):  ## TOD
                 prob_data += prob_before + prob_after
 
 
-    return [0,  prob_data, 0]
+    return [0,  prob_data, 0, 0]
 
 # This function computes the value of the entire quantity under the integral
 # a given infect time.  HOwever, we only need p(data) for a given infect time.
 
-# def prob_model_given_data(SFTNet, data, infect_times, T, logn_fact, s0):  ## TODO: Profile this
-#     """
-#     Returns a tuple whose first element is P(z | attacker) and the
-#     second element is P(data | z, attacker).
+def prob_model_given_data_old(SFTNet, data, infect_times, T, logn_fact, s0):  ## TODO: Profile this
+    """
+    Returns a tuple whose first element is P(z | attacker) and the
+    second element is P(data | z, attacker).
 
-#     Parameters
-#     ----------
+    Parameters
+    ----------
 
-#     SFTNet : SFTNet instance
-#         An SFTNet
+    SFTNet : SFTNet instance
+        An SFTNet
 
-#     data : list
-#         Output of gendata
+    data : list
+        Output of gendata
 
-#     infect_times : dict
-#         Dictionary of infection times
+    infect_times : dict
+        Dictionary of infection times
 
-#     T : float
-#         Total running time
+    T : float
+        Total running time
 
-#     Notes
-#     -----
+    Notes
+    -----
 
-#     This function cannot take the same infection time for multiple nodes
-#     as a starting parameters.  Need to look into why.
+    This function cannot take the same infection time for multiple nodes
+    as a starting parameters.  Need to look into why.
 
-#     """
-#     eps = 0
-#     transmissions = data[-2]
-#     # First order the infections
-#     attackers = [nd for nd in s0.keys() if s0[nd] =='infected']
-#     sorted_infect = sorted(infect_times.iteritems(),
-#                            key=operator.itemgetter(1))
-#     if min(infect_times.values()) < 0:
-#         return [-np.inf, - np.inf]
-#     not_infected = [nd for nd in SFTNet.node_names \
-#                     if nd not in infect_times.keys()]
-#     # Creates a list of tuples and then sorts by the value
-#     # Assuming the first node in SFTNet.nodes is infected.
-#     # This can be generalized to any initial condition state
-#     for nd in SFTNet.nodes:
-#         if nd.name in attackers:
-#             nd.state='infected'
-#         else:
-#             nd.state='normal'
-#     prob_sequence = 0
-#     prob_exact_times = 0
-#     time_minus_1 = 0
-#     for node, time in sorted_infect[len(attackers):]:
-#         # TODO IMPORTANT.  Generalize to be able to specify intial
-#         # infected node.  
-#         ### Here we need to control for the fact that we only
-#         ### care about the ordering if the nodes that do
-#         ### get infected since we are taking as *given* some
-#         ### nodes do not get infected when summing over DAGS
-#         ### The p exact time is ok
-#         infect_ix = SFTNet.node_names.index(node)
-#         # The index of the node that gets infected
-#         # The state of the net when the node gets infected
-#         mal_trans = SFTNet.get_mal_trans()
-#         # The transmission matrix of malicious messages given config
-#         prob_node = np.sum(mal_trans[:, infect_ix])
-#         # The (relative) probability that the node
-#         # is infected by any other node
-#         prob_total = np.sum(mal_trans[:,
-#                 np.asarray(SFTNet.get_state()) == 'normal'])
-#         # Only the nodes that are not already infected can become
-#         # infected.
-#         prob_sequence += np.log(prob_node + eps) - \
-#           np.log(prob_total + eps)
-#         # Update the probability of the sequence order
-#         deltat = time - time_minus_1 + eps
-#         # The time between infections
-#         prob_exact_times += np.log(prob_total + eps) - \
-#             deltat * prob_total
-#         # Update the probability of the specific times.  We use deltat
-#         # because of the memoryless property of the process.
-#         SFTNet.node_dict[node].state = 'infected'
-#         time_minus_1 = time
-#         ## The above loop combines the first 2 functions of Munsky's
-#         ## matlab code.
+    """
+    eps = 0
+    transmissions = data[-2]
+    # First order the infections
+    attackers = [nd for nd in s0.keys() if s0[nd] =='infected']
+    sorted_infect = sorted(infect_times.iteritems(),
+                           key=operator.itemgetter(1))
+    if min(infect_times.values()) < 0:
+        return [-np.inf, - np.inf]
+    not_infected = [nd for nd in SFTNet.node_names \
+                    if nd not in infect_times.keys()]
+    # Creates a list of tuples and then sorts by the value
+    # Assuming the first node in SFTNet.nodes is infected.
+    # This can be generalized to any initial condition state
+    for nd in SFTNet.nodes:
+        if nd.name in attackers:
+            nd.state='infected'
+        else:
+            nd.state='normal'
+    prob_sequence = 0
+    prob_exact_times = 0
+    time_minus_1 = 0
+    for node, time in sorted_infect[len(attackers):]:
+        # TODO IMPORTANT.  Generalize to be able to specify intial
+        # infected node.  
+        ### Here we need to control for the fact that we only
+        ### care about the ordering if the nodes that do
+        ### get infected since we are taking as *given* some
+        ### nodes do not get infected when summing over DAGS
+        ### The p exact time is ok
+        infect_ix = SFTNet.node_names.index(node)
+        # The index of the node that gets infected
+        # The state of the net when the node gets infected
+        mal_trans = SFTNet.get_mal_trans()
+        # The transmission matrix of malicious messages given config
+        prob_node = np.sum(mal_trans[:, infect_ix])
+        # The (relative) probability that the node
+        # is infected by any other node
+        prob_total = np.sum(mal_trans[:,
+                np.asarray(SFTNet.get_state()) == 'normal'])
+        # Only the nodes that are not already infected can become
+        # infected.
+        prob_sequence += np.log(prob_node + eps) - \
+          np.log(prob_total + eps)
+        # Update the probability of the sequence order
+        deltat = time - time_minus_1 + eps
+        # The time between infections
+        prob_exact_times += np.log(prob_total + eps) - \
+            deltat * prob_total
+        # Update the probability of the specific times.  We use deltat
+        # because of the memoryless property of the process.
+        SFTNet.node_dict[node].state = 'infected'
+        time_minus_1 = time
+        ## The above loop combines the first 2 functions of Munsky's
+        ## matlab code.
 
-#     deltat = T - time_minus_1
-#     noinfect_prob = 0
-#     for node in not_infected:
-#         infect_ix = SFTNet.node_names.index(node)
-#         # The index of the node that gets infected
-#         # The state of the net when the node gets infected
-#         mal_trans = SFTNet.get_mal_trans() 
-#         # The transmission matrix of malicious messages given config
-#         prob_node = np.sum(mal_trans[:, infect_ix])
-#         # This is the sum of all of the rate constants connected to the node
-#         noinfect_prob += - prob_node * deltat
+    deltat = T - time_minus_1
+    noinfect_prob = 0
+    for node in not_infected:
+        infect_ix = SFTNet.node_names.index(node)
+        # The index of the node that gets infected
+        # The state of the net when the node gets infected
+        mal_trans = SFTNet.get_mal_trans() 
+        # The transmission matrix of malicious messages given config
+        prob_node = np.sum(mal_trans[:, infect_ix])
+        # This is the sum of all of the rate constants connected to the node
+        noinfect_prob += - prob_node * deltat
 
-#     prob_no_infect_data = 0
-#     for node in not_infected:
-#         # For each node.  node is the node name, not the instance
-#         _node_inst = SFTNet.node_dict[node]
-#         # We need the node instance here.  This should be added as a method
-#         # of SFTNet instance
-#         norm_ix = _node_inst.states.index('normal')
-#         # Index of normal state
-#         for o_node in _node_inst.sends_to :
-#             rate =  np.sum(_node_inst.rates[o_node][norm_ix, :])
-#             num_msgs = len(transmissions[node+'-'+o_node])
-#             prob_msgs = (num_msgs *
-#                     np.log(rate * T) -
-#                     logn_fact[num_msgs] -
-#                     rate * T)
-#             prob_no_infect_data += prob_msgs
+    prob_no_infect_data = 0
+    for node in not_infected:
+        # For each node.  node is the node name, not the instance
+        _node_inst = SFTNet.node_dict[node]
+        # We need the node instance here.  This should be added as a method
+        # of SFTNet instance
+        norm_ix = _node_inst.states.index('normal')
+        # Index of normal state
+        for o_node in _node_inst.sends_to :
+            rate =  np.sum(_node_inst.rates[o_node][norm_ix, :])
+            num_msgs = len(transmissions[node+'-'+o_node])
+            prob_msgs = (num_msgs *
+                    np.log(rate * T) -
+                    logn_fact[num_msgs] -
+                    rate * T)
+            prob_no_infect_data += prob_msgs
 
-#     prob_data = prob_no_infect_data
-#     for node, time in sorted_infect:
-#         # For each node.  node is the node name, not the instance
-#         _node_inst = SFTNet.node_dict[node]
-#         # We need the node instance here.  This should be added as a method
-#         # of SFTNet instance
-#         norm_ix = _node_inst.states.index('normal')
-#         # Index of normal state
-#         infect_ix = _node_inst.states.index('infected')
-#         # Index of infected state
-#         for o_node in _node_inst.sends_to:
-#         # If two nodes are connected
-#             if time == 0:
-#                 # Because of problems with 0 in logs
-#                 # we use this for nodes that are initially
-#                 # infected
-#                 num_msgs = len(transmissions[node+'-'+o_node])
-#                 prob_msgs = (num_msgs *
-#                     np.log(
-#                     np.sum(_node_inst.rates[o_node][infect_ix, :]) * T) -
-#                     logn_fact[num_msgs] -
-#                     np.sum(_node_inst.rates[o_node][infect_ix, :]) * T)
-#                 prob_data += prob_msgs
-#             else:
-#                 num_before =  np.searchsorted(
-#                     transmissions[node+'-'+o_node],time)
-#                 # Number of reactions before
-#                 num_after = len(transmissions[node+'-'+o_node]) - num_before
-#                 # Number of reactions after infection
-#                 if num_before == 0 :
-#                     prob_before = - np.sum(_node_inst.rates[o_node][norm_ix, :]) * \
-#                                     min(T, time)
-#                 else:
-#                     prob_before = (num_before *
-#                             np.log(eps +
-#                             np.sum(_node_inst.rates[o_node][norm_ix, :]) *
-#                             min(T, time)) -
-#                             logn_fact[num_before] -
-#                             np.sum(_node_inst.rates[o_node][norm_ix, :]) *
-#                             min(T, time))
-#                 # prob before is the probability of node sending num_before
-#                 # messages to o_node before it gets infected.  This is a bit
-#                 # different from Munsky's in 3 ways.  The first is the min
-#                 # function.  This allows us to compute the probability of the
-#                 # model even when our 'guess' times are above the simulation time.
-#                 # For example, we can compute the probability of the model
-#                 # that says node 2 gets infected at time 10001 when we only
-#                 # sample up to time 1000.  The second difference is the the
-#                 # 10**-10 term.  This is simply because I assume the simulation
-#                 # starts at time 0, not time 1.  Finally, I use numpy to compute
-#                 # the factorial instead of his function.  We will see if this is
-#                 # a significant bottle neck later.
-#                 if num_after == 0:
-#                     prob_after = - np.sum(_node_inst.rates[o_node][infect_ix, :]) * \
-#                             (T-time)
-#                 else:
-#                     prob_after = ( num_after *
-#                             np.log(eps +
-#                             np.sum(_node_inst.rates[o_node][infect_ix, :]) *
-#                             (T- time)) -
-#                             logn_fact[num_after] -
-#                             np.sum(_node_inst.rates[o_node][infect_ix, :]) *
-#                             (T-time))
-#                 prob_data += prob_before + prob_after
+    prob_data = prob_no_infect_data
+    for node, time in sorted_infect:
+        # For each node.  node is the node name, not the instance
+        _node_inst = SFTNet.node_dict[node]
+        # We need the node instance here.  This should be added as a method
+        # of SFTNet instance
+        norm_ix = _node_inst.states.index('normal')
+        # Index of normal state
+        infect_ix = _node_inst.states.index('infected')
+        # Index of infected state
+        for o_node in _node_inst.sends_to:
+        # If two nodes are connected
+            if time == 0:
+                # Because of problems with 0 in logs
+                # we use this for nodes that are initially
+                # infected
+                num_msgs = len(transmissions[node+'-'+o_node])
+                prob_msgs = (num_msgs *
+                    np.log(
+                    np.sum(_node_inst.rates[o_node][infect_ix, :]) * T) -
+                    logn_fact[num_msgs] -
+                    np.sum(_node_inst.rates[o_node][infect_ix, :]) * T)
+                prob_data += prob_msgs
+            else:
+                num_before =  np.searchsorted(
+                    transmissions[node+'-'+o_node],time)
+                # Number of reactions before
+                num_after = len(transmissions[node+'-'+o_node]) - num_before
+                # Number of reactions after infection
+                if num_before == 0 :
+                    prob_before = - np.sum(_node_inst.rates[o_node][norm_ix, :]) * \
+                                    min(T, time)
+                else:
+                    prob_before = (num_before *
+                            np.log(eps +
+                            np.sum(_node_inst.rates[o_node][norm_ix, :]) *
+                            min(T, time)) -
+                            logn_fact[num_before] -
+                            np.sum(_node_inst.rates[o_node][norm_ix, :]) *
+                            min(T, time))
+                # prob before is the probability of node sending num_before
+                # messages to o_node before it gets infected.  This is a bit
+                # different from Munsky's in 3 ways.  The first is the min
+                # function.  This allows us to compute the probability of the
+                # model even when our 'guess' times are above the simulation time.
+                # For example, we can compute the probability of the model
+                # that says node 2 gets infected at time 10001 when we only
+                # sample up to time 1000.  The second difference is the the
+                # 10**-10 term.  This is simply because I assume the simulation
+                # starts at time 0, not time 1.  Finally, I use numpy to compute
+                # the factorial instead of his function.  We will see if this is
+                # a significant bottle neck later.
+                if num_after == 0:
+                    prob_after = - np.sum(_node_inst.rates[o_node][infect_ix, :]) * \
+                            (T-time)
+                else:
+                    prob_after = ( num_after *
+                            np.log(eps +
+                            np.sum(_node_inst.rates[o_node][infect_ix, :]) *
+                            (T- time)) -
+                            logn_fact[num_after] -
+                            np.sum(_node_inst.rates[o_node][infect_ix, :]) *
+                            (T-time))
+                prob_data += prob_before + prob_after
 
 
-#     return [prob_sequence + prob_exact_times + noinfect_prob,  prob_data, prob_sequence + noinfect_prob, prob_sequence]
+    return [prob_sequence + prob_exact_times + noinfect_prob,  prob_data, prob_sequence + noinfect_prob, prob_sequence]
 
 def prob_model_no_attacker(SFTnet, data, T):
     """
